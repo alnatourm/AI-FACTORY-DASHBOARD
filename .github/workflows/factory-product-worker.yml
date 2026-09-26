@@ -20,11 +20,19 @@ jobs:
         with:
           node-version: 20
       - run: npm install --ignore-scripts
-      - name: Verify product repository
+      - name: Run Antigravity approved-design build
+        env:
+          ANTIGRAVITY_API_KEY: ${{ secrets.OGROUP_ANTIGRAVITY_API_KEY }}
+        run: node factory/antigravity-build.mjs
+      - name: Verify implemented product
         run: |
           npm run typecheck
           npm test
           npm run build
+          git diff --quiet -- src public index.html package.json vite.config.ts tsconfig.json && {
+            echo "::error::Antigravity produced no product implementation changes."
+            exit 1
+          }
       - name: Record Factory execution evidence
         env:
           RUN_ID: ${{ github.event.client_payload.runId }}
@@ -42,10 +50,15 @@ jobs:
           git config user.name "OGroup AI Factory"
           git config user.email "factory@ogroup.local"
           git checkout -b "$BRANCH"
-          git add factory-evidence/latest.json
-          git commit -m "Record Factory product execution evidence"
+          git add src public index.html package.json vite.config.ts tsconfig.json factory-evidence 2>/dev/null || true
+          IMPLEMENTATION_COUNT="$(git diff --cached --name-only | grep -Ev '^(factory-evidence/|\.github/|.*\.md$)' | wc -l | tr -d ' ')"
+          if [ "$IMPLEMENTATION_COUNT" = "0" ]; then
+            echo "::error::No implementation files staged; refusing evidence-only completion."
+            exit 1
+          fi
+          git commit -m "Factory implementation: $RUN_ID"
           git push origin "$BRANCH"
-          PR_URL="$(gh pr create --title "Factory execution: $RUN_ID" --body "Autonomous Factory product-repository verification completed. Source: $RUN_ID" --base main --head "$BRANCH")"
+          PR_URL="$(gh pr create --title "Factory execution: $RUN_ID" --body "Antigravity implementation completed and independently verified by the Factory. Source: $RUN_ID" --base main --head "$BRANCH")"
           PR_NUMBER="$(gh pr view "$PR_URL" --json number --jq .number)"
           echo "PR_NUMBER=$PR_NUMBER" >> "$GITHUB_ENV"
       - name: Re-verify exact machine PR head
