@@ -1,6 +1,6 @@
 name: Factory Product Worker
 
-on:
+'on':
   repository_dispatch:
     types:
       - factory-work-execute
@@ -32,6 +32,7 @@ jobs:
       - name: Commit evidence branch
         env:
           RUN_ID: ${{ github.event.client_payload.runId }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           BRANCH="factory/execution-${GITHUB_RUN_ID}"
           git config user.name "OGroup AI Factory"
@@ -41,5 +42,3 @@ jobs:
           git commit -m "Record Factory product execution evidence"
           git push origin "$BRANCH"
           gh pr create --title "Factory execution: $RUN_ID" --body "Autonomous Factory product-repository verification completed. Source: $RUN_ID" --base main --head "$BRANCH"
-        env:
-          GH_TOKEN: ${{ github.token }}
