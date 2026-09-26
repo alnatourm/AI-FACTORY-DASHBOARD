@@ -1,0 +1,45 @@
+name: Factory Product Worker
+
+on:
+  repository_dispatch:
+    types:
+      - factory-work-execute
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  execute:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --ignore-scripts
+      - name: Verify product repository
+        run: npm test
+      - name: Record Factory execution evidence
+        env:
+          RUN_ID: ${{ github.event.client_payload.runId }}
+          SOURCE_REPOSITORY: ${{ github.event.client_payload.sourceRepository }}
+          SOURCE_ISSUE: ${{ github.event.client_payload.sourceIssue }}
+        run: |
+          mkdir -p factory-evidence
+          printf '{"runId":"%s","sourceRepository":"%s","sourceIssue":"%s","status":"verified","workflowRun":"%s"}\n' "$RUN_ID" "$SOURCE_REPOSITORY" "$SOURCE_ISSUE" "$GITHUB_RUN_ID" > factory-evidence/latest.json
+      - name: Commit evidence branch
+        env:
+          RUN_ID: ${{ github.event.client_payload.runId }}
+        run: |
+          BRANCH="factory/execution-${GITHUB_RUN_ID}"
+          git config user.name "OGroup AI Factory"
+          git config user.email "factory@ogroup.local"
+          git checkout -b "$BRANCH"
+          git add factory-evidence/latest.json
+          git commit -m "Record Factory product execution evidence"
+          git push origin "$BRANCH"
+          gh pr create --title "Factory execution: $RUN_ID" --body "Autonomous Factory product-repository verification completed. Source: $RUN_ID" --base main --head "$BRANCH"
+        env:
+          GH_TOKEN: ${{ github.token }}
