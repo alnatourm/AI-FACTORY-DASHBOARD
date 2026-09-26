@@ -8,6 +8,7 @@ name: Factory Product Worker
 permissions:
   contents: write
   pull-requests: write
+  actions: read
 
 jobs:
   execute:
@@ -20,7 +21,10 @@ jobs:
           node-version: 20
       - run: npm install --ignore-scripts
       - name: Verify product repository
-        run: npm test
+        run: |
+          npm run typecheck
+          npm test
+          npm run build
       - name: Record Factory execution evidence
         env:
           RUN_ID: ${{ github.event.client_payload.runId }}
@@ -29,7 +33,7 @@ jobs:
         run: |
           mkdir -p factory-evidence
           printf '{"runId":"%s","sourceRepository":"%s","sourceIssue":"%s","status":"verified","workflowRun":"%s"}\n' "$RUN_ID" "$SOURCE_REPOSITORY" "$SOURCE_ISSUE" "$GITHUB_RUN_ID" > factory-evidence/latest.json
-      - name: Commit evidence branch
+      - name: Commit evidence and open safe machine PR
         env:
           RUN_ID: ${{ github.event.client_payload.runId }}
           GH_TOKEN: ${{ github.token }}
@@ -41,4 +45,42 @@ jobs:
           git add factory-evidence/latest.json
           git commit -m "Record Factory product execution evidence"
           git push origin "$BRANCH"
-          gh pr create --title "Factory execution: $RUN_ID" --body "Autonomous Factory product-repository verification completed. Source: $RUN_ID" --base main --head "$BRANCH"
+          PR_URL="$(gh pr create --title "Factory execution: $RUN_ID" --body "Autonomous Factory product-repository verification completed. Source: $RUN_ID" --base main --head "$BRANCH")"
+          PR_NUMBER="$(gh pr view "$PR_URL" --json number --jq .number)"
+          echo "PR_NUMBER=$PR_NUMBER" >> "$GITHUB_ENV"
+      - name: Re-verify exact machine PR head
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PR_HEAD="$(gh pr view "$PR_NUMBER" --json headRefOid --jq .headRefOid)"
+          test "$PR_HEAD" = "$(git rev-parse HEAD)"
+          npm run typecheck
+          npm test
+          npm run build
+      - name: Merge verified machine PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr merge "$PR_NUMBER" --squash --match-head-commit "$(git rev-parse HEAD)"
+      - name: Report completion to Factory
+        if: success()
+        env:
+          FACTORY_CALLBACK_TOKEN: ${{ secrets.FACTORY_CALLBACK_TOKEN }}
+          SOURCE_REPOSITORY: ${{ github.event.client_payload.sourceRepository }}
+          SOURCE_ISSUE: ${{ github.event.client_payload.sourceIssue }}
+          RUN_ID: ${{ github.event.client_payload.runId }}
+        run: |
+          if [ -z "$FACTORY_CALLBACK_TOKEN" ]; then
+            echo "::error::FACTORY_CALLBACK_TOKEN is required for cross-repository completion."
+            exit 1
+          fi
+          gh api --method PATCH "repos/$SOURCE_REPOSITORY/issues/$SOURCE_ISSUE" \
+            -H "Authorization: Bearer $FACTORY_CALLBACK_TOKEN" \
+            -f state=closed \
+            -f state_reason=completed
+          gh api --method POST "repos/$SOURCE_REPOSITORY/issues/$SOURCE_ISSUE/labels" \
+            -H "Authorization: Bearer $FACTORY_CALLBACK_TOKEN" \
+            -f 'labels[]=factory-status:completed'
+          gh api --method POST "repos/$SOURCE_REPOSITORY/issues/$SOURCE_ISSUE/comments" \
+            -H "Authorization: Bearer $FACTORY_CALLBACK_TOKEN" \
+            -f body="Factory execution completed automatically. Product repository: $GITHUB_REPOSITORY. Run: $RUN_ID. Worker workflow: $GITHUB_RUN_ID."
