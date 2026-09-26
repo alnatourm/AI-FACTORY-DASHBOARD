@@ -20,16 +20,20 @@ jobs:
         with:
           node-version: 20
       - run: npm install --ignore-scripts
-      - name: Run Antigravity approved-design build
+      - name: Apply Factory-owned Antigravity build
         env:
-          ANTIGRAVITY_API_KEY: ${{ secrets.OGROUP_ANTIGRAVITY_API_KEY }}
-        run: node factory/antigravity-build.mjs
+          RUN_ID: ${{ github.event.client_payload.runId }}
+          SOURCE_REPOSITORY: ${{ github.event.client_payload.sourceRepository }}
+          SOURCE_ISSUE: ${{ github.event.client_payload.sourceIssue }}
+        run: node factory/apply-factory-antigravity-result.mjs
       - name: Verify implemented product
         run: |
           npm run typecheck
           npm test
           npm run build
-          git diff --quiet -- src public index.html package.json vite.config.ts tsconfig.json && {
+          PRODUCT_PATHS=(src index.html package.json vite.config.ts tsconfig.json)
+          if [ -d public ]; then PRODUCT_PATHS+=(public); fi
+          git diff --quiet -- "${PRODUCT_PATHS[@]}" && {
             echo "::error::Antigravity produced no product implementation changes."
             exit 1
           }
@@ -50,7 +54,8 @@ jobs:
           git config user.name "OGroup AI Factory"
           git config user.email "factory@ogroup.local"
           git checkout -b "$BRANCH"
-          git add src public index.html package.json vite.config.ts tsconfig.json factory-evidence 2>/dev/null || true
+          git add -A -- src index.html package.json vite.config.ts tsconfig.json factory-evidence
+          if [ -d public ]; then git add -A -- public; fi
           IMPLEMENTATION_COUNT="$(git diff --cached --name-only | grep -Ev '^(factory-evidence/|\.github/|.*\.md$)' | wc -l | tr -d ' ')"
           if [ "$IMPLEMENTATION_COUNT" = "0" ]; then
             echo "::error::No implementation files staged; refusing evidence-only completion."
