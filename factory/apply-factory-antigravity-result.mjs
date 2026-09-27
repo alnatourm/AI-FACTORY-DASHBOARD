@@ -37,5 +37,6 @@ for(const file of payload.files){
   fs.mkdirSync(path.dirname(p),{recursive:true}); fs.writeFileSync(p,file.content);
 }
 fs.mkdirSync('factory-evidence',{recursive:true});
-fs.writeFileSync('factory-evidence/antigravity-latest.json',JSON.stringify({provider:payload.provider,interactionId:payload.interactionId,summary:payload.summary,buildId,changedFiles:payload.files.map(f=>f.path)},null,2)+'\n');
-console.log(JSON.stringify({type:'FACTORY_ANTIGRAVITY_RESULT_APPLIED',buildId,files:payload.files.map(f=>f.path)}));
+const sliceId=payload.sliceId||'dashboard-shell-home';
+fs.writeFileSync('factory-evidence/antigravity-latest.json',JSON.stringify({provider:payload.provider,interactionId:payload.interactionId,summary:payload.summary,buildId,sliceId,changedFiles:payload.files.map(f=>f.path)},null,2)+'\n');
+console.log(JSON.stringify({type:'FACTORY_ANTIGRAVITY_RESULT_APPLIED',buildId,sliceId,files:payload.files.map(f=>f.path)}));
