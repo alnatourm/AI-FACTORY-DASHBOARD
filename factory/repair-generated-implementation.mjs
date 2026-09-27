@@ -4,33 +4,52 @@ import { spawnSync } from 'node:child_process';
 const appPath = 'src/App.tsx';
 if (!fs.existsSync(appPath)) throw new Error('REPAIR_TARGET_MISSING: src/App.tsx');
 
-const check = spawnSync('npm', ['run', 'typecheck'], { encoding: 'utf8', shell: process.platform === 'win32' });
-const diagnostics = `${check.stdout || ''}\n${check.stderr || ''}`;
-const matches = [...diagnostics.matchAll(/src\/App\.tsx\((\d+),(\d+)\): error TS1005: ',' expected\./g)];
+const repairs = [];
+for (let pass = 1; pass <= 8; pass += 1) {
+  const check = spawnSync('npm', ['run', 'typecheck'], { encoding: 'utf8', shell: process.platform === 'win32' });
+  if (check.status === 0) {
+    console.log(JSON.stringify({ type: 'FACTORY_REPAIR_APPLIED', target: appPath, repairs, verified: true }));
+    process.exit(0);
+  }
+  const diagnostics = String(check.stdout || '') + '\n' + String(check.stderr || '');
+  const lines = fs.readFileSync(appPath, 'utf8').split('\n');
+  let changed = false;
 
-if (!matches.length) {
-  console.log(JSON.stringify({ type: 'FACTORY_REPAIR_NOOP', target: appPath, reason: 'NO_SUPPORTED_TS1005' }));
-  process.exit(0);
+  const comma = diagnostics.match(/src\/App\.tsx\((\d+),(\d+)\): error TS1005: ',' expected\./);
+  if (comma) {
+    const errorLine = Number(comma[1]);
+    const i = errorLine - 2;
+    if (i >= 0 && i < lines.length && !lines[i].trimEnd().endsWith(',')) {
+      lines[i] = lines[i].trimEnd() + ',';
+      repairs.push({ pass, code: 'TS1005', errorLine, repairedLine: errorLine - 1 });
+      changed = true;
+    }
+  }
+
+  if (!changed) {
+    const shorthand = diagnostics.match(/src\/App\.tsx\((\d+),(\d+)\): error TS18004: No value exists in scope for the shorthand property '([^']+)'\./);
+    if (shorthand) {
+      const errorLine = Number(shorthand[1]);
+      const token = shorthand[3];
+      const i = errorLine - 1;
+      if (i >= 0 && i < lines.length) {
+        const before = lines[i];
+        const parts = lines[i].split(',').filter(part => part.trim() !== token);
+        lines[i] = parts.join(',');
+        if (lines[i] !== before) {
+          repairs.push({ pass, code: 'TS18004', errorLine, removedInvalidShorthand: token });
+          changed = true;
+        }
+      }
+    }
+  }
+
+  if (!changed) {
+    const diagnostic = diagnostics.split('\n').find(x => x.includes('src/App.tsx')) || '';
+    console.log(JSON.stringify({ type: repairs.length ? 'FACTORY_REPAIR_PARTIAL' : 'FACTORY_REPAIR_NOOP', target: appPath, repairs, reason: 'UNSUPPORTED_DIAGNOSTIC', diagnostic }));
+    process.exit(0);
+  }
+  fs.writeFileSync(appPath, lines.join('\n'));
 }
 
-const lines = fs.readFileSync(appPath, 'utf8').split('\n');
-const repaired = [];
-
-for (const match of matches.reverse()) {
-  const errorLine = Number(match[1]);
-  const previousIndex = errorLine - 2;
-  if (previousIndex < 0 || previousIndex >= lines.length) continue;
-  const previous = lines[previousIndex];
-  const trimmed = previous.trimEnd();
-  if (!trimmed || trimmed.endsWith(',')) continue;
-  lines[previousIndex] = trimmed + ',';
-  repaired.push({ errorLine, repairedLine: errorLine - 1 });
-}
-
-if (!repaired.length) {
-  console.log(JSON.stringify({ type: 'FACTORY_REPAIR_NOOP', target: appPath, reason: 'NO_SAFE_EDIT' }));
-  process.exit(0);
-}
-
-fs.writeFileSync(appPath, lines.join('\n'));
-console.log(JSON.stringify({ type: 'FACTORY_REPAIR_APPLIED', target: appPath, repaired }));
+console.log(JSON.stringify({ type: 'FACTORY_REPAIR_LIMIT_REACHED', target: appPath, repairs }));
