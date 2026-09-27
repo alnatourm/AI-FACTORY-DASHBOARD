@@ -1,33 +1,36 @@
 import fs from 'node:fs';
+import { spawnSync } from 'node:child_process';
 
 const appPath = 'src/App.tsx';
 if (!fs.existsSync(appPath)) throw new Error('REPAIR_TARGET_MISSING: src/App.tsx');
 
-let source = fs.readFileSync(appPath, 'utf8');
-const before = source;
-const lines = source.split('\n');
+const check = spawnSync('npm', ['run', 'typecheck'], { encoding: 'utf8', shell: process.platform === 'win32' });
+const diagnostics = `${check.stdout || ''}\n${check.stderr || ''}`;
+const matches = [...diagnostics.matchAll(/src\/App\.tsx\((\d+),(\d+)\): error TS1005: ',' expected\./g)];
 
-const property = /^\s*[A-Za-z_$][\w$]*\s*:/;
-const needsComma = (line) => {
-  const t = line.trim();
-  if (!t || t.endsWith(',') || t.endsWith('{') || t.endsWith('[') || t.endsWith(';')) return false;
-  if (t.startsWith('//') || t.startsWith('/*') || t.startsWith('*')) return false;
-  return /(?:['"`\d}\]])$/.test(t);
-};
-
-for (let i = 1; i < lines.length; i += 1) {
-  if (property.test(lines[i]) && needsComma(lines[i - 1])) {
-    lines[i - 1] = lines[i - 1].replace(/\s*$/, ',');
-  }
-  if (/^\s*\{\s*(?:id|key|label|title):/.test(lines[i]) && /^\s*\}\s*$/.test(lines[i - 1])) {
-    lines[i - 1] = lines[i - 1].replace(/\}\s*$/, '},');
-  }
+if (!matches.length) {
+  console.log(JSON.stringify({ type: 'FACTORY_REPAIR_NOOP', target: appPath, reason: 'NO_SUPPORTED_TS1005' }));
+  process.exit(0);
 }
 
-source = lines.join('\n');
-if (source === before) {
-  console.log(JSON.stringify({ type: 'FACTORY_REPAIR_NOOP', target: appPath }));
-} else {
-  fs.writeFileSync(appPath, source);
-  console.log(JSON.stringify({ type: 'FACTORY_REPAIR_APPLIED', target: appPath }));
+const lines = fs.readFileSync(appPath, 'utf8').split('\n');
+const repaired = [];
+
+for (const match of matches.reverse()) {
+  const errorLine = Number(match[1]);
+  const previousIndex = errorLine - 2;
+  if (previousIndex < 0 || previousIndex >= lines.length) continue;
+  const previous = lines[previousIndex];
+  const trimmed = previous.trimEnd();
+  if (!trimmed || trimmed.endsWith(',')) continue;
+  lines[previousIndex] = trimmed + ',';
+  repaired.push({ errorLine, repairedLine: errorLine - 1 });
 }
+
+if (!repaired.length) {
+  console.log(JSON.stringify({ type: 'FACTORY_REPAIR_NOOP', target: appPath, reason: 'NO_SAFE_EDIT' }));
+  process.exit(0);
+}
+
+fs.writeFileSync(appPath, lines.join('\n'));
+console.log(JSON.stringify({ type: 'FACTORY_REPAIR_APPLIED', target: appPath, repaired }));
