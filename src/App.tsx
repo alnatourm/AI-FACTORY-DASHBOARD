@@ -81,7 +81,8 @@ function Home({go,rtl}:{go:(s:Screen)=>void;rtl:boolean}){
 }
 
 function CreateProduct({notify,rtl}:{notify:(s:string)=>void;rtl:boolean}){
- const [idea,setIdea]=useState(''); const [priority,setPriority]=useState('Normal'); const ready=idea.trim().length>15;
+ const [idea,setIdea]=useState(''); const [priority,setPriority]=useState('Normal'); const [launching,setLaunching]=useState(false); const ready=idea.trim().length>15;
+ const launch=async()=>{ if(!factoryConfigured){notify('Factory API is not configured');return} setLaunching(true); try{await factoryApi.startRun({intent:idea,priority,source:'product-owner-dashboard'});notify('Factory run accepted');}catch(e){notify(e instanceof Error?e.message:'Factory launch failed')}finally{setLaunching(false)} };
  return <div className="stitch-create">
   <section className="stitch-create-main">
    <div className="stitch-intro panel">
@@ -98,7 +99,7 @@ function CreateProduct({notify,rtl}:{notify:(s:string)=>void;rtl:boolean}){
    <details className="panel advanced"><summary>{rtl?'إعدادات هندسية متقدمة':'Advanced Engineering Parameters'} <small>{rtl?'اختياري':'optional'}</small></summary><p className="muted">{rtl?'تبقى مخفية افتراضياً. المصنع يختار الإعدادات الآمنة ما لم يوجد قرار معماري مادي.':'Hidden by default. The Factory chooses safe defaults unless a material architecture decision requires you.'}</p></details>
   </section>
   <aside className="stitch-create-side">
-   <section className="panel launch-card"><span className="kicker">COMMAND CENTER</span><h3>{rtl?'إطلاق أمر التصنيع':'Launch Factory Run'}</h3><p>{rtl?'بعد الإطلاق، لا تحتاج لإدارة الفروع أو الاختبارات أو الإصلاحات الروتينية.':'After launch, you do not manage branches, CI retries or routine repairs.'}</p><div className="dispatch-ready"><span className="status-dot green"/> Agent Dispatch Ready</div><button disabled={!ready} className="primary full launch-big" onClick={()=>notify('Product intent accepted for Factory preparation')}><Rocket size={18}/>{rtl?'ابدأ تشغيل المصنع':'Start AI Factory'}</button><small className="authority-note">Human gates: Design · Material architecture/security · Production</small></section>
+   <section className="panel launch-card"><span className="kicker">COMMAND CENTER</span><h3>{rtl?'إطلاق أمر التصنيع':'Launch Factory Run'}</h3><p>{rtl?'بعد الإطلاق، لا تحتاج لإدارة الفروع أو الاختبارات أو الإصلاحات الروتينية.':'After launch, you do not manage branches, CI retries or routine repairs.'}</p><div className="dispatch-ready"><span className="status-dot green"/> Agent Dispatch Ready</div><button disabled={!ready} className="primary full launch-big" onClick={launch}><Rocket size={18}/>{launching?(rtl?'جارٍ الإطلاق…':'Launching…'):(rtl?'ابدأ تشغيل المصنع':'Start AI Factory')}</button><small className="authority-note">Human gates: Design · Material architecture/security · Production</small></section>
    <section className="panel flow-card"><PanelTitle title={rtl?'ماذا يحدث بعد الضغط؟':'Automated Flow'} sub="Factory-owned execution"/>{[
     ['Product','Factory logic'],['Architecture','Orchestrator stage'],['Design','Google Stitch'],['Design Review','OGroup review'],['Human Gate','Product Owner'],['Build','Google Antigravity'],['QA','CI + Orchestrator'],['Security','Rules + checks'],['Staging','Verified deployment'],['Product Review','Product Owner']
    ].map((x,i)=><div className="flow-line" key={x[0]}><span>{i+1}</span><div><b>{x[0]}</b><small>{x[1]}</small></div>{i===4||i===9?<Status value="WAITING_HUMAN"/>:<Status value="QUEUED"/>}</div>)}</section>
