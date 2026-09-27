@@ -129,13 +129,11 @@ jobs:
             echo "::error::FACTORY_CALLBACK_TOKEN is required for cross-repository completion."
             exit 1
           fi
-          gh api --method PATCH "repos/$SOURCE_REPOSITORY/issues/$SOURCE_ISSUE" \
-            -H "Authorization: Bearer $FACTORY_CALLBACK_TOKEN" \
-            -f state=closed \
-            -f state_reason=completed
-          gh api --method POST "repos/$SOURCE_REPOSITORY/issues/$SOURCE_ISSUE/labels" \
-            -H "Authorization: Bearer $FACTORY_CALLBACK_TOKEN" \
-            -f 'labels[]=factory-status:completed'
+          SLICE_ID="$(jq -r '.sliceId // "dashboard-shell-home"' factory-evidence/antigravity-latest.json)"
+          BUILD_ID="$(jq -r '.buildId // empty' factory-evidence/antigravity-latest.json)"
           gh api --method POST "repos/$SOURCE_REPOSITORY/issues/$SOURCE_ISSUE/comments" \
             -H "Authorization: Bearer $FACTORY_CALLBACK_TOKEN" \
-            -f body="Factory execution completed automatically. Product repository: $GITHUB_REPOSITORY. Run: $RUN_ID. Worker workflow: $GITHUB_RUN_ID."
+            -f body="FACTORY_SLICE_COMPLETED $RUN_ID $SLICE_ID $BUILD_ID $GITHUB_SHA
+
+Slice completed automatically after implementation, independent verification, green exact-head PR gate, and merge. Product repository: $GITHUB_REPOSITORY. Worker workflow: $GITHUB_RUN_ID."
+          echo "Slice $SLICE_ID recorded. Factory orchestrator owns overall issue completion."
