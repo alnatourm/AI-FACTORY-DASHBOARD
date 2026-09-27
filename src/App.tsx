@@ -4,6 +4,7 @@ import {
   ClipboardCheck, Code2, Factory, FileCheck2, Gauge, Globe, HeartPulse, LayoutDashboard,
   Menu, Plus, Rocket, Search, ShieldCheck, Sparkles, X, Zap, Eye, ExternalLink
 } from 'lucide-react';
+import { factoryApi, factoryConfigured, type FactorySnapshot } from './factory-api';
 
 type Lang='en'|'ar';
 type Screen='home'|'create'|'control'|'design'|'review'|'agents'|'health'|'attention'|'activity';
@@ -37,8 +38,10 @@ const agents=[
 export function App(){
  const [lang,setLang]=useState<Lang>('en'); const [screen,setScreen]=useState<Screen>('home');
  const [menu,setMenu]=useState(false); const [toast,setToast]=useState('');
+ const [factorySnapshot,setFactorySnapshot]=useState<FactorySnapshot|null>(null); const [factoryError,setFactoryError]=useState('');
  const t=copy[lang]; const rtl=lang==='ar'; const stageNames=rtl?arStages:stages;
  useEffect(()=>{document.documentElement.dir=rtl?'rtl':'ltr';document.documentElement.lang=lang},[rtl,lang]);
+ useEffect(()=>{ if(!factoryConfigured) return; let alive=true; const load=()=>factoryApi.snapshot().then(x=>{if(alive){setFactorySnapshot(x);setFactoryError('')}}).catch(e=>{if(alive)setFactoryError(e instanceof Error?e.message:'FACTORY_API_ERROR')}); load(); const timer=setInterval(load,30000); return()=>{alive=false;clearInterval(timer)} },[]);
  const nav=[
   ['home',t.home,LayoutDashboard],['create',t.create,Plus],['control',t.control,Gauge],
   ['design',t.design,ShieldCheck],['review',t.review,ClipboardCheck],['agents',t.agents,Bot],
@@ -55,7 +58,7 @@ export function App(){
    <div className="sidebar-footer"><span className="system-line"><i className="status-dot green"/>{t.online}</span><small>Watchdog · healthy</small></div>
   </aside>
   <main className="content">
-   <Topbar title={screen==='home'?t.title:nav.find(n=>n[0]===screen)?.[1]||t.title} subtitle={screen==='home'?t.desc:'AI Factory · Product Owner Control Plane'} lang={lang} setLang={setLang} onCreate={()=>go('create')}/>
+   <Topbar title={screen==='home'?t.title:nav.find(n=>n[0]===screen)?.[1]||t.title} subtitle={screen==='home'?t.desc:'AI Factory · Product Owner Control Plane'} lang={lang} setLang={setLang} onCreate={()=>go('create')} factoryLive={factoryConfigured&&!factoryError} factoryConfigured={factoryConfigured}/>
    {screen==='home'&&<Home go={go} rtl={rtl}/>}
    {screen==='create'&&<CreateProduct notify={notify} rtl={rtl}/>}
    {screen==='control'&&<ControlRoom stageNames={stageNames}/>}
@@ -70,8 +73,8 @@ export function App(){
  </div>
 }
 
-function Topbar({title,subtitle,lang,setLang,onCreate}:{title:string;subtitle:string;lang:Lang;setLang:(x:Lang)=>void;onCreate:()=>void}){
- return <header className="page-header"><div><p className="eyebrow">PRODUCT OWNER CONTROL PLANE</p><h1>{title}</h1><span className="header-subtitle">{subtitle}</span></div><div className="header-actions"><div className="lang-toggle-group"><button className={'lang-btn '+(lang==='en'?'active':'')} onClick={()=>setLang('en')}>English</button><button className={'lang-btn '+(lang==='ar'?'active':'')} onClick={()=>setLang('ar')}>العربية</button></div><button className="primary" onClick={onCreate}><Plus size={17}/>Build New Product</button></div></header>
+function Topbar({title,subtitle,lang,setLang,onCreate,factoryLive,factoryConfigured}:{title:string;subtitle:string;lang:Lang;setLang:(x:Lang)=>void;onCreate:()=>void;factoryLive:boolean;factoryConfigured:boolean}){
+ return <header className="page-header"><div><p className="eyebrow">PRODUCT OWNER CONTROL PLANE</p><h1>{title}</h1><span className="header-subtitle">{subtitle}</span></div><div className="header-actions"><span className="system-line"><i className={'status-dot '+(factoryLive?'green':'')}/>{factoryLive?'FACTORY CONNECTED':factoryConfigured?'FACTORY UNREACHABLE':'FACTORY NOT CONFIGURED'}</span><div className="lang-toggle-group"><button className={'lang-btn '+(lang==='en'?'active':'')} onClick={()=>setLang('en')}>English</button><button className={'lang-btn '+(lang==='ar'?'active':'')} onClick={()=>setLang('ar')}>العربية</button></div><button className="primary" onClick={onCreate}><Plus size={17}/>Build New Product</button></div></header>
 }
 function Home({go,rtl}:{go:(s:Screen)=>void;rtl:boolean}){
  return <div className="factory-home"><section className="home-command panel"><div><span className="kicker">AUTONOMOUS SOFTWARE FACTORY · CONTROL PLANE</span><h2>OGroup AI Factory</h2><p>Build, verify and govern software products from one Product Owner command center.</p></div><button className="primary build-command" onClick={()=>go('create')}><Plus/> Build New Product</button></section><section className="metrics"><Metric icon={CircleDot} label="Running jobs" value="3" note="Factory controlled"/><Metric icon={AlertTriangle} label="Needs attention" value="1" note="Human decision"/><Metric icon={CheckCircle2} label="Verified today" value="7" note="Evidence recorded"/><Metric icon={HeartPulse} label="Factory health" value="Healthy" note="Watchdog active"/></section><div className="home-grid"><section className="panel"><div className="console-head"><PanelTitle title="Active Products" sub="Outcome-focused production queue"/><button className="ghost" onClick={()=>go('activity')}>Factory activity <ChevronRight size={13}/></button></div>{projects.map(p=><button className="project-row" key={p.name} onClick={()=>go('control')}><div className="product-avatar"><Box size={18}/></div><div className="grow"><b>{p.name}</b><small>{p.agent}</small><div className="progress"><i style={{width:p.progress+'%'}}/></div></div><Status value={p.status}/><div className="stage-label"><small>CURRENT STAGE</small><b>{(rtl?arStages:stages)[p.stage]}</b></div><ChevronRight size={17}/></button>)}</section><section className="panel attention-home"><PanelTitle title="Needs My Attention" sub="Only genuine authority gates"/><div className="decision-card"><div className="amber"><ShieldCheck size={19}/></div><span className="kicker">DESIGN APPROVAL</span><h3>AI Factory Dashboard</h3><p>Reviewed design is ready for your decision.</p><button className="primary full" onClick={()=>go('design')}>Review decision <ArrowRight size={16}/></button></div><div className="autonomy-note"><Bot/><span><b>Factory handles the rest</b><small>Branches · CI · retries · provider recovery · verification</small></span></div></section></div><section className="panel section-gap"><div className="console-head"><PanelTitle title="Live Factory Path" sub="Stage progress backed by evidence"/><Status value="RUNNING"/></div><Pipeline current={4}/></section></div>
