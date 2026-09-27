@@ -1,0 +1,11 @@
+{
+  "provider": "google-antigravity",
+  "interactionId": "v1_Chd0SXE0YXBlRkR2aVpqTWNQaDZUUC1RRRIXdElxNGFwZUZEdmlaak1jUGg2VFAtUUU",
+  "summary": "Implemented bounded slice dashboard-shell-home: shared application shell, responsive navigation with mobile drawer, bilingual Arabic/English language controls with full RTL layout support, and the Factory Home screen.",
+  "buildId": "36290951076",
+  "changedFiles": [
+    "src/App.tsx",
+    "src/styles.css",
+    "src/main.tsx"
+  ]
+}
