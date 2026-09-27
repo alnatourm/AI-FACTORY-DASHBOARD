@@ -27,18 +27,27 @@ for (let pass = 1; pass <= 8; pass += 1) {
   }
 
   if (!changed) {
-    const shorthand = diagnostics.match(/src\/App\.tsx\((\d+),(\d+)\): error TS18004: No value exists in scope for the shorthand property '([^']+)'(?:\.|\s)/);
+    const shorthand = diagnostics.match(/src\/App\.tsx\((\d+),(\d+)\): error TS18004:/);
     if (shorthand) {
       const errorLine = Number(shorthand[1]);
-      const token = shorthand[3];
+      const errorColumn = Number(shorthand[2]);
       const i = errorLine - 1;
       if (i >= 0 && i < lines.length) {
         const before = lines[i];
-        const parts = lines[i].split(',').filter(part => part.trim() !== token);
-        lines[i] = parts.join(',');
-        if (lines[i] !== before) {
-          repairs.push({ pass, code: 'TS18004', errorLine, removedInvalidShorthand: token });
-          changed = true;
+        const prefix = before.slice(0, Math.max(0, errorColumn - 1));
+        const tail = before.slice(Math.max(0, errorColumn - 1));
+        const tokenMatch = tail.match(/^([^,}\]\s]+)/);
+        if (tokenMatch) {
+          const token = tokenMatch[1];
+          let rest = tail.slice(token.length);
+          rest = rest.replace(/^\s*,\s*/, '').replace(/^\s+/, '');
+          let repairedLine = prefix + rest;
+          repairedLine = repairedLine.replace(/,\s*,/g, ',').replace(/\{\s*,/g, '{').replace(/,\s*}/g, ' }');
+          if (repairedLine !== before) {
+            lines[i] = repairedLine;
+            repairs.push({ pass, code: 'TS18004', errorLine, errorColumn, removedInvalidShorthand: token });
+            changed = true;
+          }
         }
       }
     }
