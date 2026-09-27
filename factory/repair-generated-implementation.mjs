@@ -27,7 +27,7 @@ for (let pass = 1; pass <= 8; pass += 1) {
   }
 
   if (!changed) {
-    const shorthand = diagnostics.match(/src\/App\.tsx\((\d+),(\d+)\): error TS18004: No value exists in scope for the shorthand property '([^']+)'\./);
+    const shorthand = diagnostics.match(/src\/App\.tsx\((\d+),(\d+)\): error TS18004: No value exists in scope for the shorthand property '([^']+)'(?:\.|\s)/);
     if (shorthand) {
       const errorLine = Number(shorthand[1]);
       const token = shorthand[3];
