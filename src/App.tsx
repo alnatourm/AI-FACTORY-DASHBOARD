@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   Activity, AlertTriangle, ArrowRight, Bot, Box, CheckCircle2, ChevronRight, CircleDot,
   ClipboardCheck, Code2, Factory, FileCheck2, Gauge, Globe, HeartPulse, LayoutDashboard,
-  Menu, Plus, Rocket, Search, ShieldCheck, Sparkles, X, Zap
+  Menu, Plus, Rocket, Search, ShieldCheck, Sparkles, X, Zap, Eye, ExternalLink
 } from 'lucide-react';
 
 type Lang='en'|'ar';
