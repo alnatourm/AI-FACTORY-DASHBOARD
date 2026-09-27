@@ -15,5 +15,5 @@ app.use('/api/factory',async(req,res)=>{
 });
 app.get('/health',(_req,res)=>res.json({status:'ok',factoryConfigured:Boolean(factoryUrl&&factoryToken)}));
 const root=path.dirname(fileURLToPath(import.meta.url));app.use(express.static(path.join(root,'dist')));
-app.get('*',(_req,res)=>res.sendFile(path.join(root,'dist','index.html')));
+app.use((_req,res)=>res.sendFile(path.join(root,'dist','index.html')));
 app.listen(port,'0.0.0.0',()=>console.log('Dashboard server listening on '+port));
