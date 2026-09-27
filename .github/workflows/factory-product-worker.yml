@@ -90,6 +90,28 @@ jobs:
           npm run typecheck
           npm test
           npm run build
+      - name: Wait for exact-head Dashboard Quality Gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PR_HEAD="$(gh pr view "$PR_NUMBER" --json headRefOid --jq .headRefOid)"
+          test "$PR_HEAD" = "$(git rev-parse HEAD)"
+          for attempt in $(seq 1 30); do
+            RUN_JSON="$(gh run list --workflow ci.yml --branch "factory/execution-${GITHUB_RUN_ID}" --event pull_request --limit 10 --json databaseId,headSha,status,conclusion --jq "[.[] | select(.headSha == \"$PR_HEAD\")][0] // {}")"
+            STATUS="$(printf '%s' "$RUN_JSON" | jq -r '.status // empty')"
+            CONCLUSION="$(printf '%s' "$RUN_JSON" | jq -r '.conclusion // empty')"
+            if [ "$STATUS" = "completed" ]; then
+              if [ "$CONCLUSION" = "success" ]; then
+                echo "Exact-head Dashboard Quality Gate is green."
+                exit 0
+              fi
+              echo "::error::Exact-head Dashboard Quality Gate completed with: $CONCLUSION"
+              exit 1
+            fi
+            sleep 5
+          done
+          echo "::error::Timed out waiting for exact-head Dashboard Quality Gate."
+          exit 1
       - name: Merge verified machine PR
         env:
           GH_TOKEN: ${{ github.token }}
