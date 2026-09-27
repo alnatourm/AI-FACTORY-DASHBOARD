@@ -21,16 +21,17 @@ const projects=[
  {name:'Doors',stage:2,status:'QUEUED',agent:'Architecture Agent',progress:22}
 ];
 const agents=[
- ['Factory Orchestrator','Orchestration','GPT-5.6 Sol','ACTIVE'],
- ['Product Agent','Product','GPT-5.6 Sol','ACTIVE'],
- ['Architecture Agent','Architecture','GPT-5.6 Sol','READY'],
+ ['OGroup Factory Orchestrator','Orchestration','Factory controller','ACTIVE'],
+ ['Product Generator / Factory logic','Product definition','Deterministic Factory logic','ACTIVE'],
+ ['Architecture stage','Architecture','Orchestrator stage · no separate AI adapter','READY'],
  ['Stitch Design Adapter','Design','Google Stitch','READY'],
- ['Design Review Agent','Design QA','GPT-5.6 Sol','READY'],
+ ['OGroup Design Review Agent','Design review','Structural/content review','READY'],
  ['Antigravity Build Agent','Build','Google Antigravity','RUNNING'],
- ['QA Agent','Verification','GitHub Actions','ACTIVE'],
- ['Security Agent','Security','Rules + checks','READY'],
- ['Fix Agent','Repair','GPT-5.6 Sol','READY'],
- ['Watchdog','Recovery','Factory runtime','ACTIVE']
+ ['CI / Orchestrator QA','QA','GitHub Actions + Factory verification','ACTIVE'],
+ ['Security verification stage','Security','Rules/checks · specialist adapter not configured','READY'],
+ ['Engineering Review','Review','Factory / CI / human gate','READY'],
+ ['Watchdog','Progress supervision','Deterministic Factory service','ACTIVE'],
+ ['Release Controller','Release','Factory controller + human authority','READY']
 ];
 
 export function App(){
@@ -79,11 +80,31 @@ function Home({go,rtl}:{go:(s:Screen)=>void;rtl:boolean}){
  <section className="panel section-gap"><PanelTitle title="Live Factory Path" sub="Evidence-based progress, not decorative percentages"/><Pipeline current={4}/></section></>
 }
 function CreateProduct({notify,rtl}:{notify:(s:string)=>void;rtl:boolean}){
- const [name,setName]=useState(''); const [idea,setIdea]=useState(''); const [priority,setPriority]=useState('Normal');
- const ready=name.trim().length>2&&idea.trim().length>15;
- return <div className="two-col"><section className="panel"><div className="hero-icon"><Sparkles/></div><h2>Turn an idea into software</h2><p className="muted">Describe the outcome. The Factory will prepare product scope, architecture and design before asking you for the first decision.</p><div className="form-grid"><label>Product name<input value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Clinic OS"/></label><label>Priority<select value={priority} onChange={e=>setPriority(e.target.value)}><option>Normal</option><option>High</option><option>Critical</option></select></label><label className="wide">What should we build?<textarea rows={8} value={idea} onChange={e=>setIdea(e.target.value)} placeholder="Describe the users, problem and desired result..."/></label><label>Primary market<input placeholder={rtl?'الأردن / الخليج':'Jordan / MENA'}/></label><label>Preferred language<select><option>Arabic + English</option><option>English</option><option>Arabic</option></select></label></div><button disabled={!ready} className="primary launch" onClick={()=>notify('Product brief queued for Factory preparation')}><Rocket size={17}/>Start Factory</button></section>
- <section className="panel side-info"><PanelTitle title="What happens next" sub="The Factory owns routine execution"/>{['Product brief','Architecture','Design generation','Design review','Your design approval','Build + automatic repair','QA + Security','Staging','Your product review'].map((x,i)=><div className="next-step" key={x}><span>{i+1}</span><div><b>{x}</b><small>{i===4||i===8?'Human gate':'Autonomous'}</small></div></div>)}</section></div>
+ const [idea,setIdea]=useState(''); const [priority,setPriority]=useState('Normal'); const ready=idea.trim().length>15;
+ return <div className="stitch-create">
+  <section className="stitch-create-main">
+   <div className="stitch-intro panel">
+    <div><span className="kicker">AUTONOMOUS PRODUCT ENGINE</span><h2>{rtl?'ماذا تريد أن نصنع اليوم؟':'What do you want to build today?'}</h2><p>{rtl?'صف النتيجة التجارية التي تريدها. المصنع يتولى التخطيط والهندسة والتنفيذ والتحقق.':'Describe the business outcome. The Factory owns planning, engineering, execution and verification.'}</p></div>
+    <div className="ai-ready"><Bot size={20}/><b>AI Factory</b><small>Command intake ready</small></div>
+   </div>
+   <section className="panel command-panel">
+    <div className="command-title"><Sparkles size={18}/><div><span className="kicker">P1 · SYNTHESIZER</span><h3>{rtl?'حرّر فكرة المنتج باللغة الطبيعية':'Natural Language Product Intent'}</h3></div></div>
+    <textarea rows={10} value={idea} onChange={e=>setIdea(e.target.value)} placeholder={rtl?'مثال: أريد منصة لإدارة العيادات في الأردن، عربية وإنجليزية، مع ملفات المرضى والمواعيد...':'Example: Build a bilingual clinic operating system for Jordan with patient files, appointments and secure staff roles...'}/>
+    <div className="intent-meta"><span>Intent acceptance ≥ 90%</span><span>{idea.length} chars</span></div>
+   </section>
+   <section className="panel references-panel"><PanelTitle title={rtl?'المراجع والمدخلات':'References & Inputs'} sub={rtl?'روابط، مستندات، صور أو مستودع قائم':'URLs, documents, images or an existing repository'}/><div className="reference-grid"><button className="drop-zone"><FileCheck2/><b>{rtl?'أضف ملفات مرجعية':'Add reference files'}</b><small>PDF · DOCX · PNG · JPG</small></button><div className="url-stack"><input placeholder="https://github.com/..."/><input placeholder={rtl?'رابط مرجعي إضافي':'Additional reference URL'}/></div></div></section>
+   <section className="panel constraints-panel"><PanelTitle title={rtl?'محددات الأعمال والحماية':'Business Constraints & Guardrails'} sub={rtl?'هذه القرارات تدخل عقد المنتج قبل بدء التنفيذ':'These become part of the governed product contract'}/><div className="constraint-grid"><label>Market<input placeholder={rtl?'الأردن / الخليج':'Jordan / MENA'}/></label><label>Language<select><option>Arabic + English</option><option>English</option><option>Arabic</option></select></label><label>Priority<select value={priority} onChange={e=>setPriority(e.target.value)}><option>Normal</option><option>High</option><option>Critical</option></select></label><label>Production authority<input value={rtl?'يتطلب موافقة بشرية':'Human approval required'} readOnly/></label></div></section>
+   <details className="panel advanced"><summary>{rtl?'إعدادات هندسية متقدمة':'Advanced Engineering Parameters'} <small>{rtl?'اختياري':'optional'}</small></summary><p className="muted">{rtl?'تبقى مخفية افتراضياً. المصنع يختار الإعدادات الآمنة ما لم يوجد قرار معماري مادي.':'Hidden by default. The Factory chooses safe defaults unless a material architecture decision requires you.'}</p></details>
+  </section>
+  <aside className="stitch-create-side">
+   <section className="panel launch-card"><span className="kicker">COMMAND CENTER</span><h3>{rtl?'إطلاق أمر التصنيع':'Launch Factory Run'}</h3><p>{rtl?'بعد الإطلاق، لا تحتاج لإدارة الفروع أو الاختبارات أو الإصلاحات الروتينية.':'After launch, you do not manage branches, CI retries or routine repairs.'}</p><div className="dispatch-ready"><span className="status-dot green"/> Agent Dispatch Ready</div><button disabled={!ready} className="primary full launch-big" onClick={()=>notify('Product intent accepted for Factory preparation')}><Rocket size={18}/>{rtl?'ابدأ تشغيل المصنع':'Start AI Factory'}</button><small className="authority-note">Human gates: Design · Material architecture/security · Production</small></section>
+   <section className="panel flow-card"><PanelTitle title={rtl?'ماذا يحدث بعد الضغط؟':'Automated Flow'} sub="Factory-owned execution"/>{[
+    ['Product','Factory logic'],['Architecture','Orchestrator stage'],['Design','Google Stitch'],['Design Review','OGroup review'],['Human Gate','Product Owner'],['Build','Google Antigravity'],['QA','CI + Orchestrator'],['Security','Rules + checks'],['Staging','Verified deployment'],['Product Review','Product Owner']
+   ].map((x,i)=><div className="flow-line" key={x[0]}><span>{i+1}</span><div><b>{x[0]}</b><small>{x[1]}</small></div>{i===4||i===9?<Status value="WAITING_HUMAN"/>:<Status value="QUEUED"/>}</div>)}</section>
+  </aside>
+ </div>
 }
+
 function ControlRoom({stageNames}:{stageNames:string[]}){
  return <><section className="control-hero panel"><div><span className="kicker">FACTORY-WORK:135</span><h2>AI Factory Dashboard</h2><p>Autonomous execution with evidence at every gate.</p></div><div className="hero-stat"><small>FACTORY STATE</small><Status value="RUNNING"/><b>Build</b></div></section><section className="panel section-gap"><PanelTitle title="Execution Pipeline" sub="Current stage: Build"/><Pipeline current={4} names={stageNames}/></section><div className="three-col section-gap"><Info title="Current job" value="Dashboard application build" sub="Antigravity Build Agent"/><Info title="Last heartbeat" value="Active" sub="Watchdog observing"/><Info title="Recovery" value="Armed" sub="Retry → fallback → escalate"/></div><section className="panel section-gap"><PanelTitle title="Evidence" sub="Machine-verifiable execution record"/><EvidenceTable/></section></>
 }
