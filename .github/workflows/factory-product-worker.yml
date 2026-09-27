@@ -27,6 +27,8 @@ jobs:
           SOURCE_ISSUE: ${{ github.event.client_payload.sourceIssue }}
         run: node factory/apply-factory-antigravity-result.mjs
       - name: Verify implemented product
+        id: verify
+        continue-on-error: true
         run: |
           npm run typecheck
           npm test
@@ -35,6 +37,19 @@ jobs:
           if [ -d public ]; then PRODUCT_PATHS+=(public); fi
           git diff --quiet -- "${PRODUCT_PATHS[@]}" && {
             echo "::error::Antigravity produced no product implementation changes."
+            exit 1
+          }
+      - name: Repair generated implementation
+        if: steps.verify.outcome == 'failure'
+        run: |
+          node factory/repair-generated-implementation.mjs
+          npm run typecheck
+          npm test
+          npm run build
+          PRODUCT_PATHS=(src index.html package.json vite.config.ts tsconfig.json)
+          if [ -d public ]; then PRODUCT_PATHS+=(public); fi
+          git diff --quiet -- "${PRODUCT_PATHS[@]}" && {
+            echo "::error::Repair produced no valid product implementation changes."
             exit 1
           }
       - name: Record Factory execution evidence
