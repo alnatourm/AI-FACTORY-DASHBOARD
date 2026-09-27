@@ -1,668 +1,111 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Activity,
-  AlertTriangle,
-  Bot,
-  Box,
-  CheckCircle2,
-  ChevronRight,
-  CircleDot,
-  Factory,
-  Globe,
-  HeartPulse,
-  LayoutDashboard,
-  Menu,
-  Plus,
-  ShieldCheck,
-  X
+  Activity, AlertTriangle, ArrowRight, Bot, Box, CheckCircle2, ChevronRight, CircleDot,
+  ClipboardCheck, Code2, Factory, FileCheck2, Gauge, Globe, HeartPulse, LayoutDashboard,
+  Menu, Plus, Rocket, Search, ShieldCheck, Sparkles, X, Zap
 } from 'lucide-react';
 
-type Lang = 'en' | 'ar';
+type Lang='en'|'ar';
+type Screen='home'|'create'|'control'|'design'|'review'|'agents'|'health'|'attention'|'activity';
+const stages=['Idea','Product','Architecture','Design','Build','QA','Security','Staging','Review','Production'];
+const arStages=['الفكرة','المنتج','الهندسة','التصميم','البناء','الجودة','الأمان','التجهيز','المراجعة','الإنتاج'];
 
-interface TranslationStrings {
-  brand: string;
-  brandSub: string;
-  factoryOnline: string;
-  allSystemsOperational: string;
-  navOverview: string;
-  navProjects: string;
-  navAgents: string;
-  navHealth: string;
-  navActivity: string;
-  controlRoomTag: string;
-  overviewTitle: string;
-  overviewSubtitle: string;
-  buildNewProduct: string;
-  runningJobs: string;
-  runningJobsNote: string;
-  needsAttention: string;
-  needsAttentionNote: string;
-  completedToday: string;
-  completedTodayNote: string;
-  factoryHealth: string;
-  healthy: string;
-  heartbeat12s: string;
-  activeProjectsTitle: string;
-  activeProjectsSubtitle: string;
-  viewAll: string;
-  currentStage: string;
-  lastActivity: string;
-  running: string;
-  verifying: string;
-  justNow: string;
-  minAgo4: string;
-  minAgo8: string;
-  stitchWorker: string;
-  ciWorker: string;
-  antigravityWorker: string;
-  attentionTitle: string;
-  attentionSubtitle: string;
-  designApproval: string;
-  dashboardName: string;
-  decisionDesc: string;
-  checkDesignPassed: string;
-  checkRtlChecked: string;
-  checkResponsiveChecked: string;
-  reviewDesign: string;
-  controlRoomTitle: string;
-  controlRoomSubtitle: string;
-  currentJobLabel: string;
-  currentJobValue: string;
-  executorLabel: string;
-  executorValue: string;
-  heartbeatLabel: string;
-  heartbeatValue: string;
-  recoveryLabel: string;
-  recoveryValue: string;
-  attentionQueueTitle: string;
-  attentionQueueSubtitle: string;
-  oneDecision: string;
-  attentionRowTitle: string;
-  attentionRowDesc: string;
-  waitingHuman: string;
-  reviewAction: string;
-  factoryHealthTitle: string;
-  factoryHealthSubtitle: string;
-  watchdogPolicyTitle: string;
-  watchdogPolicyDesc: string;
-  serviceOrchestrator: string;
-  serviceWatchdog: string;
-  serviceGithub: string;
-  serviceStitch: string;
-  serviceAntigravity: string;
-  serviceDeployment: string;
-  statusActive: string;
-  stages: string[];
-}
-
-const translations: Record<Lang, TranslationStrings> = {
-  en: {
-    brand: 'OGROUP',
-    brandSub: 'AI FACTORY',
-    factoryOnline: 'Factory online',
-    allSystemsOperational: 'All systems operational',
-    navOverview: 'Overview',
-    navProjects: 'Projects',
-    navAgents: 'Agents',
-    navHealth: 'Factory Health',
-    navActivity: 'Activity',
-    controlRoomTag: 'CONTROL ROOM',
-    overviewTitle: 'Factory Overview',
-    overviewSubtitle: 'Everything the Factory is building, in one place.',
-    buildNewProduct: 'Build New Product',
-    runningJobs: 'Running jobs',
-    runningJobsNote: '2 agents active',
-    needsAttention: 'Needs attention',
-    needsAttentionNote: 'Design approval',
-    completedToday: 'Completed today',
-    completedTodayNote: 'All verified',
-    factoryHealth: 'Factory health',
-    healthy: 'Healthy',
-    heartbeat12s: 'Last heartbeat 12s',
-    activeProjectsTitle: 'Active Projects',
-    activeProjectsSubtitle: 'Current products moving through the Factory',
-    viewAll: 'View all',
-    currentStage: 'CURRENT STAGE',
-    lastActivity: 'LAST ACTIVITY',
-    running: 'RUNNING',
-    verifying: 'VERIFYING',
-    justNow: 'just now',
-    minAgo4: '4 min ago',
-    minAgo8: '8 min ago',
-    stitchWorker: 'Stitch Design Agent',
-    ciWorker: 'CI + Review',
-    antigravityWorker: 'Antigravity',
-    attentionTitle: 'Needs My Attention',
-    attentionSubtitle: 'Only decisions that require you',
-    designApproval: 'DESIGN APPROVAL',
-    dashboardName: 'AI Factory Dashboard',
-    decisionDesc: '9 screens generated and reviewed. The design is ready for your decision.',
-    checkDesignPassed: 'Design review passed',
-    checkRtlChecked: 'RTL checked',
-    checkResponsiveChecked: 'Responsive checked',
-    reviewDesign: 'Review Design',
-    controlRoomTitle: 'Project Control Room',
-    controlRoomSubtitle: 'AI Factory Dashboard · live execution path',
-    currentJobLabel: 'CURRENT JOB',
-    currentJobValue: 'Dashboard control-room build',
-    executorLabel: 'ASSIGNED EXECUTOR',
-    executorValue: 'Factory build worker',
-    heartbeatLabel: 'LAST HEARTBEAT',
-    heartbeatValue: 'Active',
-    recoveryLabel: 'RECOVERY',
-    recoveryValue: 'Watchdog armed',
-    attentionQueueTitle: 'Attention Queue',
-    attentionQueueSubtitle: 'Human gates only. Routine failures stay inside automatic recovery.',
-    oneDecision: '1 DECISION',
-    attentionRowTitle: 'Design approval · AI Factory Dashboard',
-    attentionRowDesc: 'Reviewed design is ready for Product Owner decision.',
-    waitingHuman: 'WAITING_HUMAN',
-    reviewAction: 'Review',
-    factoryHealthTitle: 'Factory Health',
-    factoryHealthSubtitle: 'Live services and execution infrastructure',
-    watchdogPolicyTitle: 'Watchdog recovery policy',
-    watchdogPolicyDesc: 'Unexpected idle → resolve next work → start executor → verify heartbeat → retry/fallback → escalate only if blocked.',
-    serviceOrchestrator: 'Orchestrator',
-    serviceWatchdog: 'Watchdog',
-    serviceGithub: 'GitHub / CI',
-    serviceStitch: 'Stitch',
-    serviceAntigravity: 'Antigravity',
-    serviceDeployment: 'Deployment',
-    statusActive: 'Active',
-    stages: ['Idea', 'Product', 'Architecture', 'Design', 'Build', 'QA', 'Security', 'Staging', 'Review', 'Production']
-  },
-  ar: {
-    brand: 'أو جروب',
-    brandSub: 'مصنع الذكاء الاصطناعي',
-    factoryOnline: 'المصنع متصل بالإنترنت',
-    allSystemsOperational: 'جميع الأنظمة تعمل بكفاءة',
-    navOverview: 'نظرة عامة',
-    navProjects: 'المشاريع',
-    navAgents: 'الوكلاء',
-    navHealth: 'صحة المصنع',
-    navActivity: 'النشاط',
-    controlRoomTag: 'غرفة التحكم',
-    overviewTitle: 'نظرة عامة على المصنع',
-    overviewSubtitle: 'كل ما يبنيه المصنع، في مكان واحد.',
-    buildNewProduct: 'بناء منتج جديد',
-    runningJobs: 'المهام الجارية',
-    runningJobsNote: 'وكيلان نشطان',
-    needsAttention: 'تتطلب الاهتمام',
-    needsAttentionNote: 'اعتماد التصميم',
-    completedToday: 'المكتمل اليوم',
-    completedTodayNote: 'تم التحقق بالكامل',
-    factoryHealth: 'صحة المصنع',
-    healthy: 'سليم',
-    heartbeat12s: 'آخر نبض قبل 12 ثانية',
-    activeProjectsTitle: 'المشاريع النشطة',
-    activeProjectsSubtitle: 'المنتجات الحالية التي تمر عبر المصنع',
-    viewAll: 'عرض الكل',
-    currentStage: 'المرحلة الحالية',
-    lastActivity: 'آخر نشاط',
-    running: 'قيد التشغيل',
-    verifying: 'قيد التحقق',
-    justNow: 'الآن',
-    minAgo4: 'منذ 4 دقائق',
-    minAgo8: 'منذ 8 دقائق',
-    stitchWorker: 'وكيل التصميم Stitch',
-    ciWorker: 'التكامل المستمر والمراجعة',
-    antigravityWorker: 'أنتيجرافيتي',
-    attentionTitle: 'تتطلب انتباهي',
-    attentionSubtitle: 'القرارات التي تتطلب تدخلك فقط',
-    designApproval: 'اعتماد التصميم',
-    dashboardName: 'لوحة تحكم مصنع الذكاء الاصطناعي',
-    decisionDesc: 'تم إنشاء 9 شاشات ومراجعتها. التصميم جاهز لاتخاذ قرارك.',
-    checkDesignPassed: 'اجتاز مراجعة التصميم',
-    checkRtlChecked: 'تم فحص دعم اللغة العربية (RTL)',
-    checkResponsiveChecked: 'تم فحص التجاوب مع الشاشات',
-    reviewDesign: 'مراجعة التصميم',
-    controlRoomTitle: 'غرفة التحكم بالمشروع',
-    controlRoomSubtitle: 'لوحة تحكم مصنع الذكاء الاصطناعي · مسار التنفيذ المباشر',
-    currentJobLabel: 'المهمة الحالية',
-    currentJobValue: 'بناء غرفة التحكم للوحة القيادة',
-    executorLabel: 'المنفذ المعين',
-    executorValue: 'عامل بناء المصنع',
-    heartbeatLabel: 'آخر نبض',
-    heartbeatValue: 'نشط',
-    recoveryLabel: 'التعافي التلقائي',
-    recoveryValue: 'المراقب جاهز',
-    attentionQueueTitle: 'طابور الاهتمام',
-    attentionQueueSubtitle: 'البوابات البشرية فقط. حالات الفشل الروتينية تبقى داخل التعافي التلقائي.',
-    oneDecision: 'قرار واحد',
-    attentionRowTitle: 'اعتماد التصميم · لوحة تحكم مصنع الذكاء الاصطناعي',
-    attentionRowDesc: 'التصميم المراجع جاهز لقرار مالك المنتج.',
-    waitingHuman: 'بانتظار موافقة بشرية',
-    reviewAction: 'مراجعة',
-    factoryHealthTitle: 'صحة المصنع',
-    factoryHealthSubtitle: 'الخدمات المباشرة والبنية التحتية للتنفيذ',
-    watchdogPolicyTitle: 'سياسة تعافي المراقب الذكي',
-    watchdogPolicyDesc: 'خمول غير متوقع ← تحديد العمل التالي ← تشغيل المنفذ ← التحقق من النبض ← إعادة المحاولة/البديل ← التصعيد فقط عند التعثر.',
-    serviceOrchestrator: 'المنسق',
-    serviceWatchdog: 'المراقب',
-    serviceGithub: 'GitHub / التكامل المستمر',
-    serviceStitch: 'ستيتش',
-    serviceAntigravity: 'أنتيجرافيتي',
-    serviceDeployment: 'النشر',
-    statusActive: 'نشط',
-    stages: ['الفكرة', 'المنتج', 'الهندسة المعمارية', 'التصميم', 'البناء', 'ضمان الجودة', 'الأمان', 'التجهيز', 'المراجعة', 'الإنتاج']
-  }
+const copy={
+ en:{brand:'OGROUP',sub:'AI FACTORY',online:'Factory online',home:'Factory Home',create:'Create Product',control:'Project Control Room',design:'Design Approval',review:'Product Review',agents:'Agent Registry',health:'Factory Health',attention:'Needs My Attention',activity:'Factory Activity',newProduct:'Build New Product',title:'Factory Overview',desc:'Everything the Factory is building, in one place.',back:'Back to Factory',approve:'Approve',reject:'Request changes'},
+ ar:{brand:'أو جروب',sub:'مصنع الذكاء الاصطناعي',online:'المصنع متصل',home:'الرئيسية',create:'إنشاء منتج',control:'غرفة تحكم المشروع',design:'اعتماد التصميم',review:'مراجعة المنتج',agents:'سجل الوكلاء',health:'صحة المصنع',attention:'تتطلب انتباهي',activity:'نشاط المصنع',newProduct:'بناء منتج جديد',title:'نظرة عامة على المصنع',desc:'كل ما يبنيه المصنع في مكان واحد.',back:'العودة للمصنع',approve:'موافقة',reject:'طلب تعديلات'}
 };
 
-export function App() {
-  const [lang, setLang] = useState<Lang>('en');
-  const [activeNav, setActiveNav] = useState<number>(0);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
+const projects=[
+ {name:'AI Factory Dashboard',stage:4,status:'RUNNING',agent:'Antigravity Build Agent',progress:42},
+ {name:'CVIDEO',stage:5,status:'VERIFYING',agent:'QA Agent',progress:63},
+ {name:'Doors',stage:2,status:'QUEUED',agent:'Architecture Agent',progress:22}
+];
+const agents=[
+ ['Factory Orchestrator','Orchestration','GPT-5.6 Sol','ACTIVE'],
+ ['Product Agent','Product','GPT-5.6 Sol','ACTIVE'],
+ ['Architecture Agent','Architecture','GPT-5.6 Sol','READY'],
+ ['Stitch Design Adapter','Design','Google Stitch','READY'],
+ ['Design Review Agent','Design QA','GPT-5.6 Sol','READY'],
+ ['Antigravity Build Agent','Build','Google Antigravity','RUNNING'],
+ ['QA Agent','Verification','GitHub Actions','ACTIVE'],
+ ['Security Agent','Security','Rules + checks','READY'],
+ ['Fix Agent','Repair','GPT-5.6 Sol','READY'],
+ ['Watchdog','Recovery','Factory runtime','ACTIVE']
+];
 
-  const t = translations[lang];
-  const isRtl = lang === 'ar';
-
-  useEffect(() => {
-    document.documentElement.dir = isRtl ? 'rtl' : 'ltr';
-    document.documentElement.lang = lang;
-  }, [lang, isRtl]);
-
-  const toggleLanguage = () => {
-    setLang((prev) => (prev === 'en' ? 'ar' : 'en'));
-  };
-
-  const navItems = [
-    { name: t.navOverview, icon: LayoutDashboard },
-    { name: t.navProjects, icon: Box },
-    { name: t.navAgents, icon: Bot },
-    { name: t.navHealth, icon: HeartPulse },
-    { name: t.navActivity, icon: Activity }
-  ];
-
-  const projects = [
-    {
-      name: t.dashboardName,
-      stage: t.stages[3],
-      status: t.running,
-      statusKey: 'running',
-      worker: t.stitchWorker,
-      activity: t.justNow,
-      iconClass: 'p0'
-    },
-    { 
-      name: 'Wasl',
-      stage: t.stages[8],
-      status: t.verifying,
-      statusKey: 'verifying',
-      worker: t.ciWorker,
-      activity: t.minAgo4,
-      iconClass: 'p1'
-    },
-    { 
-      name: 'CVIDEO',
-      stage: t.stages[4],
-      status: t.running,
-      statusKey: 'running',
-      worker: t.antigravityWorker,
-      activity: t.minAgo8,
-      iconClass: 'p2'
-    }
-  ];
-
-  const services = [
-    { name: t.serviceOrchestrator, status: t.healthy, active: false },
-    { name: t.serviceWatchdog, status: t.healthy, active: false },
-    { name: t.serviceGithub, status: t.healthy, active: false },
-    { name: t.serviceStitch, status: t.statusActive, active: true },
-    { name: t.serviceAntigravity, status: t.statusActive, active: true },
-    { name: t.serviceDeployment, status: t.healthy, active: false }
-  ];
-
-  return (
-    <div className={`shell ${isRtl ? 'rtl' : 'ltr'}`}>
-      {/* Mobile top bar */}
-      <div className="mobile-header">
-        <button
-          type="button"
-          className="menu-toggle"
-          aria-label="Toggle navigation menu"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        >
-          {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-        </button>
-        <div className="mobile-brand">
-          <div className="mark">
-            <Factory size={18} />
-          </div>
-          <span className="brand-text">{t.brand}</span>
-        </div>
-        <button
-          type="button"
-          className="lang-switcher-compact"
-          onClick={toggleLanguage}
-          aria-label={isRtl ? 'Switch to English' : 'التحويل إلى العربية'}
-        >
-          <Globe size={16} />
-          <span>{isRtl ? 'EN' : 'العربية'}</span>
-        </button>
-      </div>
-
-      {/* Backdrop for mobile drawer */}
-      {mobileMenuOpen && (
-        <div
-          className="mobile-backdrop"
-          onClick={() => setMobileMenuOpen(false)}
-          aria-hidden="true"
-        />
-      )}
-
-      {/* Sidebar Navigation */}
-      <aside className={`sidebar ${mobileMenuOpen ? 'open' : ''}`}>
-        <div className="brand">
-          <div className="mark">
-            <Factory size={21} />
-          </div>
-          <div>
-            <b>{t.brand}</b>
-            <span>{t.brandSub}</span>
-          </div>
-        </div>
-
-        <nav aria-label="Main Navigation">
-          {navItems.map((item, i) => {
-            const Icon = item.icon;
-            const isActive = activeNav === i;
-            return (
-              <button
-                key={item.name}
-                type="button"
-                className={`nav-btn ${isActive ? 'active' : ''}`}
-                onClick={() => {
-                  setActiveNav(i);
-                  setMobileMenuOpen(false);
-                }}
-              >
-                <Icon size={18} />
-                <span>{item.name}</span>
-              </button>
-            );
-          })}
-        </nav>
-
-        <div className="sidebar-footer">
-          <div className="system">
-            <span>
-              <i className="status-dot green" />
-              {t.factoryOnline}
-            </span>
-            <small>{t.allSystemsOperational}</small>
-          </div>
-        </div>
-      </aside>
-
-      {/* Main Content Area: Factory Home Screen */}
-      <main className="content">
-        <header className="page-header">
-          <div className="header-meta">
-            <p className="eyebrow">{t.controlRoomTag}</p>
-            <h1>{t.overviewTitle}</h1>
-            <span className="header-subtitle">{t.overviewSubtitle}</span>
-          </div>
-          <div className="header-actions">
-            {/* Language / RTL controls */}
-            <div className="lang-toggle-group" role="group" aria-label="Language selection">
-              <button
-                type="button"
-                className={`lang-btn ${lang === 'en' ? 'active' : ''}`}
-                onClick={() => setLang('en')}
-                aria-pressed={lang === 'en'}
-              >
-                English
-              </button>
-              <button
-                type="button"
-                className={`lang-btn ${lang === 'ar' ? 'active' : ''}`}
-                onClick={() => setLang('ar')}
-                aria-pressed={lang === 'ar'}
-              >
-                العربية
-              </button>
-            </div>
-
-            <button type="button" className="primary btn-build">
-              <Plus size={18} />
-              <span>{t.buildNewProduct}</span>
-            </button>
-          </div>
-        </header>
-
-        {/* 4 Metric Cards */}
-        <section className="metrics" aria-label="Overview Metrics">
-          <Metric
-            icon={CircleDot}
-            label={t.runningJobs}
-            value="3"
-            note={t.runningJobsNote}
-          />
-          <Metric
-            icon={AlertTriangle}
-            label={t.needsAttention}
-            value="1"
-            note={t.needsAttentionNote}
-          />
-          <Metric
-            icon={CheckCircle2}
-            label={t.completedToday}
-            value="7"
-            note={t.completedTodayNote}
-          />
-          <Metric
-            icon={HeartPulse}
-            label={t.factoryHealth}
-            value={t.healthy}
-            note={t.heartbeat12s}
-          />
-        </section>
-
-        {/* 2-Column Grid: Active Projects & Needs My Attention */}
-        <div className="grid">
-          {/* Active Projects Panel */}
-          <section className="panel projects">
-            <div className="panelhead">
-              <div>
-                <h2>{t.activeProjectsTitle}</h2>
-                <p>{t.activeProjectsSubtitle}</p>
-              </div>
-              <button type="button" className="link-action">
-                <span>{t.viewAll}</span>
-                <ChevronRight size={15} className="chevron-forward" />
-              </button>
-            </div>
-            <div className="projects-list">
-              {projects.map((p) => (
-                <div className="project" key={p.name}>
-                  <div className={`projecticon ${p.iconClass}`}>
-                    <Box size={19} />
-                  </div>
-                  <div className="pname">
-                    <b>{p.name}</b>
-                    <span>{p.worker}</span>
-                  </div>
-                  <span className={`pill ${p.statusKey}`}>{p.status}</span>
-                  <div className="stage">
-                    <small>{t.currentStage}</small>
-                    <b>{p.stage}</b>
-                  </div>
-                  <div className="last">
-                    <small>{t.lastActivity}</small>
-                    <b>{p.activity}</b>
-                  </div>
-                  <ChevronRight size={17} className="chevron-forward project-chevron" />
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Needs My Attention Panel */}
-          <section className="panel attention">
-            <div className="panelhead">
-              <div>
-                <h2>{t.attentionTitle}</h2>
-                <p>{t.attentionSubtitle}</p>
-              </div>
-            </div>
-            <div className="decision">
-              <div className="decisiontop">
-                <div className="amber">
-                  <ShieldCheck size={19} />
-                </div>
-                <span>{t.designApproval}</span>
-              </div>
-              <h3>{t.dashboardName}</h3>
-              <p>{t.decisionDesc}</p>
-              <div className="checks">
-                <span>
-                  <CheckCircle2 size={15} />
-                  {t.checkDesignPassed}
-                </span>
-                <span>
-                  <CheckCircle2 size={15} />
-                  {t.checkRtlChecked}
-                </span>
-                <span>
-                  <CheckCircle2 size={15} />
-                  {t.checkResponsiveChecked}
-                </span>
-              </div>
-              <button type="button" className="review">
-                <span>{t.reviewDesign}</span>
-                <ChevronRight size={16} className="chevron-forward" />
-              </button>
-            </div>
-          </section>
-        </div>
-
-        {/* Project Control Room Panel */}
-        <section className="panel control">
-          <div className="panelhead">
-            <div>
-              <h2>{t.controlRoomTitle}</h2>
-              <p>{t.controlRoomSubtitle}</p>
-            </div>
-            <span className="healthy-pill">
-              <i className="status-dot green" />
-              {t.running}
-            </span>
-          </div>
-
-          {/* Timeline of stages */}
-          <div className="timeline" role="list">
-            {t.stages.map((stageName, i) => {
-              const isDone = i < 3;
-              const isCurrent = i === 3;
-              const stateClass = isDone ? 'done' : isCurrent ? 'current' : '';
-              return (
-                <div key={stageName} className={`stage-step ${stateClass}`} role="listitem">
-                  <span className="step-marker">{isDone ? '✓' : i + 1}</span>
-                  <b>{stageName}</b>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Evidence metadata strip */}
-          <div className="evidence">
-            <div>
-              <small>{t.currentJobLabel}</small>
-              <b>{t.currentJobValue}</b>
-            </div>
-            <div>
-              <small>{t.executorLabel}</small>
-              <b>{t.executorValue}</b>
-            </div>
-            <div>
-              <small>{t.heartbeatLabel}</small>
-              <b>{t.heartbeatValue}</b>
-            </div>
-            <div>
-              <small>{t.recoveryLabel}</small>
-              <b>{t.recoveryValue}</b>
-            </div>
-          </div>
-        </section>
-
-        {/* Attention Queue Panel */}
-        <section className="panel attentionqueue">
-          <div className="panelhead">
-            <div>
-              <h2>{t.attentionQueueTitle}</h2>
-              <p>{t.attentionQueueSubtitle}</p>
-            </div>
-            <span className="pill verifying">{t.oneDecision}</span>
-          </div>
-          <div className="attentionrow">
-            <div className="amber">
-              <ShieldCheck size={19} />
-            </div>
-            <div className="attention-text">
-              <b>{t.attentionRowTitle}</b>
-              <p>{t.attentionRowDesc}</p>
-            </div>
-            <span className="pill verifying">{t.waitingHuman}</span>
-            <button type="button" className="btn-outline">
-              <span>{t.reviewAction}</span>
-              <ChevronRight size={15} className="chevron-forward" />
-            </button>
-          </div>
-        </section>
-
-        {/* Factory Health Panel */}
-        <section className="panel health">
-          <div className="panelhead">
-            <div>
-              <h2>{t.factoryHealthTitle}</h2>
-              <p>{t.factoryHealthSubtitle}</p>
-            </div>
-            <span className="healthy-pill">
-              <i className="status-dot green" />
-              {t.healthy}
-            </span>
-          </div>
-
-          <div className="recovery">
-            <b>{t.watchdogPolicyTitle}</b>
-            <span>{t.watchdogPolicyDesc}</span>
-          </div>
-
-          <div className="services">
-            {services.map((s) => (
-              <div key={s.name} className="service-item">
-                <span>
-                  <i className={`status-dot ${s.active ? 'blue' : 'green'}`} />
-                  {s.name}
-                </span>
-                <b>{s.status}</b>
-              </div>
-            ))}
-          </div>
-        </section>
-      </main>
-    </div>
-  );
+export function App(){
+ const [lang,setLang]=useState<Lang>('en'); const [screen,setScreen]=useState<Screen>('home');
+ const [menu,setMenu]=useState(false); const [toast,setToast]=useState('');
+ const t=copy[lang]; const rtl=lang==='ar'; const stageNames=rtl?arStages:stages;
+ useEffect(()=>{document.documentElement.dir=rtl?'rtl':'ltr';document.documentElement.lang=lang},[rtl,lang]);
+ const nav=[
+  ['home',t.home,LayoutDashboard],['create',t.create,Plus],['control',t.control,Gauge],
+  ['design',t.design,ShieldCheck],['review',t.review,ClipboardCheck],['agents',t.agents,Bot],
+  ['health',t.health,HeartPulse],['attention',t.attention,AlertTriangle],['activity',t.activity,Activity]
+ ] as const;
+ const go=(s:Screen)=>{setScreen(s);setMenu(false);window.scrollTo({top:0,behavior:'smooth'})};
+ const notify=(m:string)=>{setToast(m);setTimeout(()=>setToast(''),2200)};
+ return <div className="shell">
+  <div className="mobile-header"><button className="icon-btn" onClick={()=>setMenu(!menu)}>{menu?<X/>:<Menu/>}</button><b>{t.brand}</b><button className="lang-mini" onClick={()=>setLang(rtl?'en':'ar')}><Globe size={15}/>{rtl?'EN':'العربية'}</button></div>
+  {menu&&<div className="mobile-backdrop" onClick={()=>setMenu(false)}/>}
+  <aside className={'sidebar '+(menu?'open':'')}>
+   <div className="brand"><div className="mark"><Factory size={21}/></div><div><b>{t.brand}</b><span>{t.sub}</span></div></div>
+   <nav>{nav.map(([id,label,Icon])=><button key={id} className={'nav-btn '+(screen===id?'active':'')} onClick={()=>go(id)}><Icon size={18}/><span>{label}</span></button>)}</nav>
+   <div className="sidebar-footer"><span className="system-line"><i className="status-dot green"/>{t.online}</span><small>Watchdog · healthy</small></div>
+  </aside>
+  <main className="content">
+   <Topbar title={screen==='home'?t.title:nav.find(n=>n[0]===screen)?.[1]||t.title} subtitle={screen==='home'?t.desc:'AI Factory · Product Owner Control Plane'} lang={lang} setLang={setLang} onCreate={()=>go('create')}/>
+   {screen==='home'&&<Home go={go} rtl={rtl}/>}
+   {screen==='create'&&<CreateProduct notify={notify} rtl={rtl}/>}
+   {screen==='control'&&<ControlRoom stageNames={stageNames}/>}
+   {screen==='design'&&<DesignApproval notify={notify} t={t}/>}
+   {screen==='review'&&<ProductReview notify={notify} t={t}/>}
+   {screen==='agents'&&<AgentRegistry/>}
+   {screen==='health'&&<FactoryHealth/>}
+   {screen==='attention'&&<Attention go={go}/>}
+   {screen==='activity'&&<FactoryActivity/>}
+  </main>
+  {toast&&<div className="toast"><CheckCircle2 size={17}/>{toast}</div>}
+ </div>
 }
 
-interface MetricProps {
-  icon: React.ElementType;
-  label: string;
-  value: string;
-  note: string;
+function Topbar({title,subtitle,lang,setLang,onCreate}:{title:string;subtitle:string;lang:Lang;setLang:(x:Lang)=>void;onCreate:()=>void}){
+ return <header className="page-header"><div><p className="eyebrow">PRODUCT OWNER CONTROL PLANE</p><h1>{title}</h1><span className="header-subtitle">{subtitle}</span></div><div className="header-actions"><div className="lang-toggle-group"><button className={'lang-btn '+(lang==='en'?'active':'')} onClick={()=>setLang('en')}>English</button><button className={'lang-btn '+(lang==='ar'?'active':'')} onClick={()=>setLang('ar')}>العربية</button></div><button className="primary" onClick={onCreate}><Plus size={17}/>Build New Product</button></div></header>
 }
-
-function Metric({ icon: Icon, label, value, note }: MetricProps) {
-  return (
-    <div className="metric">
-      <div className="metricicon">
-        <Icon size={20} />
-      </div>
-      <div className="metric-content">
-        <span className="metric-label">{label}</span>
-        <strong className="metric-value">{value}</strong>
-        <small className="metric-note">{note}</small>
-      </div>
-    </div>
-  );
+function Home({go,rtl}:{go:(s:Screen)=>void;rtl:boolean}){
+ return <><section className="metrics"><Metric icon={CircleDot} label="Running jobs" value="3" note="2 agents active"/><Metric icon={AlertTriangle} label="Needs attention" value="1" note="Human decision"/><Metric icon={CheckCircle2} label="Completed today" value="7" note="All verified"/><Metric icon={HeartPulse} label="Factory health" value="Healthy" note="Heartbeat live"/></section>
+ <div className="grid"><section className="panel span"><PanelTitle title="Active Products" sub="Products moving through the Factory"/>{projects.map(p=><button className="project-row" key={p.name} onClick={()=>go('control')}><div className="product-avatar"><Box size={18}/></div><div className="grow"><b>{p.name}</b><small>{p.agent}</small><div className="progress"><i style={{width:p.progress+'%'}}/></div></div><Status value={p.status}/><div className="stage-label"><small>CURRENT STAGE</small><b>{(rtl?arStages:stages)[p.stage]}</b></div><ChevronRight size={17}/></button>)}</section>
+ <section className="panel"><PanelTitle title="Needs My Attention" sub="Only decisions that require you"/><div className="decision-card"><div className="amber"><ShieldCheck size={19}/></div><span className="kicker">DESIGN APPROVAL</span><h3>AI Factory Dashboard</h3><p>9 screens reviewed. Design is ready for Product Owner decision.</p><div className="mini-checks"><span>✓ Design review passed</span><span>✓ RTL checked</span><span>✓ Responsive checked</span></div><button className="primary full" onClick={()=>go('design')}>Review Design <ArrowRight size={16}/></button></div></section></div>
+ <section className="panel section-gap"><PanelTitle title="Live Factory Path" sub="Evidence-based progress, not decorative percentages"/><Pipeline current={4}/></section></>
 }
+function CreateProduct({notify,rtl}:{notify:(s:string)=>void;rtl:boolean}){
+ const [name,setName]=useState(''); const [idea,setIdea]=useState(''); const [priority,setPriority]=useState('Normal');
+ const ready=name.trim().length>2&&idea.trim().length>15;
+ return <div className="two-col"><section className="panel"><div className="hero-icon"><Sparkles/></div><h2>Turn an idea into software</h2><p className="muted">Describe the outcome. The Factory will prepare product scope, architecture and design before asking you for the first decision.</p><div className="form-grid"><label>Product name<input value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Clinic OS"/></label><label>Priority<select value={priority} onChange={e=>setPriority(e.target.value)}><option>Normal</option><option>High</option><option>Critical</option></select></label><label className="wide">What should we build?<textarea rows={8} value={idea} onChange={e=>setIdea(e.target.value)} placeholder="Describe the users, problem and desired result..."/></label><label>Primary market<input placeholder={rtl?'الأردن / الخليج':'Jordan / MENA'}/></label><label>Preferred language<select><option>Arabic + English</option><option>English</option><option>Arabic</option></select></label></div><button disabled={!ready} className="primary launch" onClick={()=>notify('Product brief queued for Factory preparation')}><Rocket size={17}/>Start Factory</button></section>
+ <section className="panel side-info"><PanelTitle title="What happens next" sub="The Factory owns routine execution"/>{['Product brief','Architecture','Design generation','Design review','Your design approval','Build + automatic repair','QA + Security','Staging','Your product review'].map((x,i)=><div className="next-step" key={x}><span>{i+1}</span><div><b>{x}</b><small>{i===4||i===8?'Human gate':'Autonomous'}</small></div></div>)}</section></div>
+}
+function ControlRoom({stageNames}:{stageNames:string[]}){
+ return <><section className="control-hero panel"><div><span className="kicker">FACTORY-WORK:135</span><h2>AI Factory Dashboard</h2><p>Autonomous execution with evidence at every gate.</p></div><div className="hero-stat"><small>FACTORY STATE</small><Status value="RUNNING"/><b>Build</b></div></section><section className="panel section-gap"><PanelTitle title="Execution Pipeline" sub="Current stage: Build"/><Pipeline current={4} names={stageNames}/></section><div className="three-col section-gap"><Info title="Current job" value="Dashboard application build" sub="Antigravity Build Agent"/><Info title="Last heartbeat" value="Active" sub="Watchdog observing"/><Info title="Recovery" value="Armed" sub="Retry → fallback → escalate"/></div><section className="panel section-gap"><PanelTitle title="Evidence" sub="Machine-verifiable execution record"/><EvidenceTable/></section></>
+}
+function DesignApproval({notify,t}:{notify:(s:string)=>void;t:any}){
+ return <div className="two-col"><section className="panel"><div className="approval-head"><div className="hero-icon"><ShieldCheck/></div><div><span className="kicker">HUMAN GATE</span><h2>AI Factory Dashboard · Design V1</h2><p>Google Stitch · 9 screens · Review score 100/100</p></div></div><div className="preview-grid">{['Factory Home','Create Product','Control Room','Design Approval','Product Review','Agent Registry','Factory Health','Needs My Attention','Factory Activity'].map((x,i)=><div className="screen-preview" key={x}><div className="preview-window"><LayoutDashboard/><span>{i+1}</span></div><b>{x}</b><small>Responsive · RTL ready</small></div>)}</div></section><section className="panel decision-panel"><PanelTitle title="Decision" sub="Only you can cross this gate"/><div className="score"><strong>100</strong><span>/100<br/>Design review</span></div><div className="mini-checks large"><span>✓ 9/9 screens generated</span><span>✓ Arabic 9/9</span><span>✓ RTL 9/9</span><span>✓ Interactive 9/9</span><span>✓ Responsive 9/9</span></div><button className="primary full" onClick={()=>notify('Design approved. Factory may continue.')}>{t.approve}</button><button className="secondary full" onClick={()=>notify('Change request opened')}>{t.reject}</button></section></div>
+}
+function ProductReview({notify,t}:{notify:(s:string)=>void;t:any}){
+ return <><section className="panel review-hero"><div><span className="kicker">PRODUCT REVIEW</span><h2>AI Factory Dashboard · Staging</h2><p>Build, QA and security evidence are ready for your final product decision.</p></div><Status value="WAITING_HUMAN"/></section><div className="four-col section-gap"><Info title="Build" value="Passed" sub="Production bundle"/><Info title="Tests" value="42 / 42" sub="All passing"/><Info title="Security" value="Passed" sub="No blockers"/><Info title="Deployment" value="Staging" sub="Verified"/></div><section className="panel section-gap"><PanelTitle title="Release evidence" sub="What the Factory proved before asking you"/><EvidenceTable/><div className="review-actions"><button className="secondary" onClick={()=>notify('Product returned with requested changes')}>{t.reject}</button><button className="primary" onClick={()=>notify('Production approval recorded')}><Rocket size={17}/>{t.approve} Production</button></div></section></>
+}
+function AgentRegistry(){return <section className="panel"><PanelTitle title="Agent Registry" sub="Capabilities available to the Factory"/><div className="table-wrap"><table><thead><tr><th>Agent</th><th>Role</th><th>Provider</th><th>Status</th></tr></thead><tbody>{agents.map(a=><tr key={a[0]}><td><b>{a[0]}</b></td><td>{a[1]}</td><td>{a[2]}</td><td><Status value={a[3]}/></td></tr>)}</tbody></table></div></section>}
+function FactoryHealth(){
+ const services=[['Orchestrator','Healthy','18s'],['Watchdog','Healthy','12s'],['GitHub / CI','Healthy','31s'],['Stitch','Ready','2m'],['Antigravity','Active','8s'],['Deployment','Healthy','46s']];
+ return <><section className="health-banner"><HeartPulse/><div><b>Factory healthy</b><span>All critical execution services are responding.</span></div><Status value="HEALTHY"/></section><div className="service-grid section-gap">{services.map(s=><div className="panel service-card" key={s[0]}><div><i className="status-dot green"/><b>{s[0]}</b></div><strong>{s[1]}</strong><small>Last heartbeat {s[2]}</small></div>)}</div><section className="panel section-gap"><PanelTitle title="Watchdog recovery policy" sub="Autonomy before escalation"/><div className="policy">Unexpected idle <ArrowRight/> Resolve next work <ArrowRight/> Start executor <ArrowRight/> Verify heartbeat <ArrowRight/> Retry / fallback <ArrowRight/> Human only if blocked</div></section></>
+}
+function Attention({go}:{go:(s:Screen)=>void}){return <section className="panel"><PanelTitle title="Needs My Attention" sub="Routine failures are deliberately hidden from this queue"/><div className="attention-item"><div className="amber"><ShieldCheck/></div><div className="grow"><span className="kicker">DESIGN APPROVAL</span><b>AI Factory Dashboard</b><p>Reviewed design is waiting for Product Owner approval.</p></div><Status value="WAITING_HUMAN"/><button className="primary" onClick={()=>go('design')}>Review</button></div><div className="empty-state"><CheckCircle2/><b>Nothing else needs you</b><span>The Factory is handling routine execution and recovery.</span></div></section>}
+function FactoryActivity(){
+ const events=[['12:42','Build Agent','Started Dashboard application build','RUNNING'],['12:39','Watchdog','Recovered idle work and selected next runnable task','COMPLETED'],['12:34','Quality Gate','Engineering verification passed','COMPLETED'],['12:29','Orchestrator','Resolved target repository','COMPLETED'],['12:24','Design Review','Approved 9/9 Stitch screens','COMPLETED']];
+ return <section className="panel"><PanelTitle title="Factory Activity" sub="A readable audit trail of autonomous work"/><div className="activity-list">{events.map((e,i)=><div className="activity-row" key={i}><time>{e[0]}</time><div className="activity-icon"><Activity size={16}/></div><div className="grow"><b>{e[1]}</b><span>{e[2]}</span></div><Status value={e[3]}/></div>)}</div></section>
+}
+function Pipeline({current,names=stages}:{current:number;names?:string[]}){return <div className="timeline">{names.map((x,i)=><div className={'stage-step '+(i<current?'done':i===current?'current':'')} key={x}><span className="step-marker">{i<current?'✓':i+1}</span><b>{x}</b></div>)}</div>}
+function Metric({icon:Icon,label,value,note}:{icon:React.ElementType;label:string;value:string;note:string}){return <div className="metric"><div className="metricicon"><Icon size={20}/></div><div><span>{label}</span><strong>{value}</strong><small>{note}</small></div></div>}
+function PanelTitle({title,sub}:{title:string;sub:string}){return <div className="panelhead"><div><h2>{title}</h2><p>{sub}</p></div></div>}
+function Status({value}:{value:string}){const k=value.toLowerCase().replace('_','-');return <span className={'status '+k}><i/>{value}</span>}
+function Info({title,value,sub}:{title:string;value:string;sub:string}){return <div className="panel info"><small>{title}</small><b>{value}</b><span>{sub}</span></div>}
+function EvidenceTable(){return <div className="table-wrap"><table><thead><tr><th>Gate</th><th>Evidence</th><th>Result</th></tr></thead><tbody><tr><td>Build</td><td>TypeScript + Vite production build</td><td><Status value="COMPLETED"/></td></tr><tr><td>QA</td><td>Automated tests and exact-head verification</td><td><Status value="COMPLETED"/></td></tr><tr><td>Security</td><td>Policy and dependency checks</td><td><Status value="COMPLETED"/></td></tr><tr><td>Deployment</td><td>Staging artifact + heartbeat</td><td><Status value="VERIFYING"/></td></tr></tbody></table></div>}
