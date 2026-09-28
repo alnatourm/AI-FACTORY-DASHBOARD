@@ -4,16 +4,16 @@ import {
   ClipboardCheck, Code2, Factory, FileCheck2, Gauge, Globe, HeartPulse, LayoutDashboard,
   Menu, Plus, Rocket, Search, ShieldCheck, Sparkles, X, Zap, Eye, ExternalLink
 } from 'lucide-react';
-import { factoryApi, factoryConfigured, type FactorySnapshot, type FactoryRun, type FactoryRunDetail } from './factory-api';
+import { factoryApi, factoryConfigured, type FactorySnapshot, type FactoryRun, type FactoryRunDetail, type FactoryConfig } from './factory-api';
 
 type Lang='en'|'ar';
-type Screen='home'|'create'|'control'|'design'|'review'|'agents'|'health'|'attention'|'activity';
+type Screen='home'|'create'|'control'|'design'|'review'|'agents'|'factory'|'health'|'attention'|'activity';
 const stages=['Idea','Product','Architecture','Design','Build','QA','Security','Staging','Review','Production'];
 const arStages=['الفكرة','المنتج','الهندسة','التصميم','البناء','الجودة','الأمان','التجهيز','المراجعة','الإنتاج'];
 
 const copy={
- en:{brand:'OGROUP',sub:'AI FACTORY',online:'Factory online',home:'Factory Home',create:'Create Product',control:'Project Control Room',design:'Design Approval',review:'Product Review',agents:'Agent Registry',health:'Factory Health',attention:'Needs My Attention',activity:'Factory Activity',newProduct:'Build New Product',title:'Factory Overview',desc:'Everything the Factory is building, in one place.',back:'Back to Factory',approve:'Approve',reject:'Request changes'},
- ar:{brand:'أو جروب',sub:'مصنع الذكاء الاصطناعي',online:'المصنع متصل',home:'الرئيسية',create:'إنشاء منتج',control:'غرفة تحكم المشروع',design:'اعتماد التصميم',review:'مراجعة المنتج',agents:'سجل الوكلاء',health:'صحة المصنع',attention:'تتطلب انتباهي',activity:'نشاط المصنع',newProduct:'بناء منتج جديد',title:'نظرة عامة على المصنع',desc:'كل ما يبنيه المصنع في مكان واحد.',back:'العودة للمصنع',approve:'موافقة',reject:'طلب تعديلات'}
+ en:{brand:'OGROUP',sub:'AI FACTORY',online:'Factory online',home:'Factory Home',create:'Create Product',control:'Project Control Room',design:'Design Approval',review:'Product Review',agents:'Agent Registry',health:'Factory Health',attention:'Needs My Attention',activity:'Factory Activity',factory:'My Factory',newProduct:'Build New Product',title:'Factory Overview',desc:'Everything the Factory is building, in one place.',back:'Back to Factory',approve:'Approve',reject:'Request changes'},
+ ar:{brand:'أو جروب',sub:'مصنع الذكاء الاصطناعي',online:'المصنع متصل',home:'الرئيسية',create:'إنشاء منتج',control:'غرفة تحكم المشروع',design:'اعتماد التصميم',review:'مراجعة المنتج',agents:'سجل الوكلاء',health:'صحة المصنع',attention:'تتطلب انتباهي',activity:'نشاط المصنع',factory:'مصنعي',newProduct:'بناء منتج جديد',title:'نظرة عامة على المصنع',desc:'كل ما يبنيه المصنع في مكان واحد.',back:'العودة للمصنع',approve:'موافقة',reject:'طلب تعديلات'}
 };
 
 const agents=[
@@ -42,7 +42,7 @@ export function App(){
  const selectRun=(id:string,next:Screen='control')=>{setSelectedRunId(id);go(next)};
  const nav=[
   ['home',t.home,LayoutDashboard],['create',t.create,Plus],['control',t.control,Gauge],
-  ['design',t.design,ShieldCheck],['review',t.review,ClipboardCheck],['agents',t.agents,Bot],
+  ['design',t.design,ShieldCheck],['review',t.review,ClipboardCheck],['factory',t.factory,Factory],['agents',t.agents,Bot],
   ['health',t.health,HeartPulse],['attention',t.attention,AlertTriangle],['activity',t.activity,Activity]
  ] as const;
  const go=(s:Screen)=>{setScreen(s);setMenu(false);window.scrollTo({top:0,behavior:'smooth'})};
@@ -62,12 +62,33 @@ export function App(){
    {screen==='control'&&<ControlRoom stageNames={stageNames} run={selectedRun}/>}
    {screen==='design'&&<DesignApproval notify={notify} t={t} run={selectedRun}/>}
    {screen==='review'&&<ProductReview notify={notify} t={t} run={selectedRun}/>}
-   {screen==='agents'&&<AgentRegistry/>}
+   {screen==='factory'&&<MyFactory notify={notify}/>}\n   {screen==='agents'&&<AgentRegistry/>}
    {screen==='health'&&<FactoryHealth/>}
    {screen==='attention'&&<Attention snapshot={factorySnapshot} selectRun={selectRun}/>}
    {screen==='activity'&&<FactoryActivity snapshot={factorySnapshot} run={selectedRun}/>}
   </main>
   {toast&&<div className="toast"><CheckCircle2 size={17}/>{toast}</div>}
+ </div>
+}
+
+function MyFactory({notify}:{notify:(s:string)=>void}){
+ const empty:FactoryConfig={mode:'managed',providers:[],models:[],agents:[],roles:[]};
+ const [config,setConfig]=useState<FactoryConfig>(empty); const [loading,setLoading]=useState(true); const [saving,setSaving]=useState(false);
+ useEffect(()=>{factoryApi.config().then(setConfig).catch(()=>setConfig(empty)).finally(()=>setLoading(false))},[]);
+ const save=async()=>{setSaving(true);try{setConfig(await factoryApi.saveConfig(config));notify('Factory configuration saved')}catch{notify('Could not save Factory configuration')}finally{setSaving(false)}};
+ if(loading)return <section className="panel"><PanelTitle title="My Factory" sub="Loading your workforce…"/></section>;
+ return <div className="factory-home">
+  <section className="home-command panel"><div><span className="kicker">YOUR AI WORKFORCE</span><h2>My Factory</h2><p>Use our workforce, or bring yours. The same Project Brain, orchestration, testing and deployment pipeline powers both.</p></div><button className="primary" disabled={saving} onClick={save}>{saving?'Saving…':'Save Factory'}</button></section>
+  <section className="panel section-gap"><PanelTitle title="How should we build?" sub="You can change this per Factory configuration."/>
+   <div className="metrics">
+    <button className={'metric '+(config.mode==='managed'?'selected':'')} onClick={()=>setConfig({...config,mode:'managed'})}><Bot/><b>Build For Me</b><small>OGroup chooses and manages the AI workforce.</small></button>
+    <button className={'metric '+(config.mode==='custom'?'selected':'')} onClick={()=>setConfig({...config,mode:'custom'})}><Code2/><b>Build With My AI</b><small>Connect your agents, models and providers.</small></button>
+   </div>
+  </section>
+  <section className="panel section-gap"><PanelTitle title="Workforce" sub="ROLE → AGENT → MODEL → PROVIDER"/>
+   <div className="metrics"><Metric icon={Bot} label="Agents" value={String(config.agents.length)} note="OGroup or customer agents"/><Metric icon={Sparkles} label="Models" value={String(config.models.length)} note="Capability-routed models"/><Metric icon={Globe} label="Providers" value={String(config.providers.length)} note="Managed or BYOK"/><Metric icon={Gauge} label="Role assignments" value={String(config.roles.length)} note="Stable roles, swappable workers"/></div>
+   {config.mode==='custom'&&<div className="empty-state compact"><Zap/><b>Custom Factory is enabled</b><span>Provider credentials are stored by reference. Raw API keys never belong in this screen.</span></div>}
+  </section>
  </div>
 }
 
