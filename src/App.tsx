@@ -34,11 +34,11 @@ export function App(){
  const [lang,setLang]=useState<Lang>('en'); const [screen,setScreen]=useState<Screen>('home');
  const [menu,setMenu]=useState(false); const [toast,setToast]=useState('');
  const [factorySnapshot,setFactorySnapshot]=useState<FactorySnapshot|null>(null); const [factoryError,setFactoryError]=useState('');
- const [selectedRunId,setSelectedRunId]=useState(''); const [selectedRun,setSelectedRun]=useState<FactoryRunDetail|null>(null);
+ const [selectedRunId,setSelectedRunId]=useState(()=>localStorage.getItem('factory:selectedRunId')||''); const [selectedRun,setSelectedRun]=useState<FactoryRunDetail|null>(null);
  const t=copy[lang]; const rtl=lang==='ar'; const stageNames=rtl?arStages:stages;
  useEffect(()=>{document.documentElement.dir=rtl?'rtl':'ltr';document.documentElement.lang=lang},[rtl,lang]);
  useEffect(()=>{ if(!factoryConfigured) return; let alive=true; const load=()=>factoryApi.snapshot().then(x=>{if(alive){setFactorySnapshot(x);setFactoryError('')}}).catch(e=>{if(alive)setFactoryError(e instanceof Error?e.message:'FACTORY_API_ERROR')}); load(); const timer=setInterval(load,30000); return()=>{alive=false;clearInterval(timer)} },[]);
- useEffect(()=>{if(!selectedRunId){setSelectedRun(null);return} factoryApi.run(selectedRunId).then(setSelectedRun).catch(()=>setSelectedRun(null))},[selectedRunId,factorySnapshot]);
+ useEffect(()=>{if(!selectedRunId){setSelectedRun(null);return} localStorage.setItem('factory:selectedRunId',selectedRunId); factoryApi.run(selectedRunId).then(setSelectedRun).catch(()=>{setSelectedRun(null);localStorage.removeItem('factory:selectedRunId')})},[selectedRunId,factorySnapshot]);
  const selectRun=(id:string,next:Screen='control')=>{setSelectedRunId(id);go(next)};
  const nav=[
   ['home',t.home,LayoutDashboard],['create',t.create,Plus],['control',t.control,Gauge],
