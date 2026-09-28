@@ -3,6 +3,11 @@ export type FactoryActivityItem={id:string|number;name?:string;status?:string;co
 export type FactorySnapshot={runs:FactoryRun[];activity:FactoryActivityItem[];agents:unknown[];health:Record<string,unknown>;attention:FactoryRun[]};
 export type FactoryRunDetail=FactoryRun&{intent:string;activity:FactoryActivityItem[]};
 export type StartRunResult={runId:string;name:string;targetRepository:string;status:string};
+export type FactoryProvider={id:string;name:string;kind:string;credentialRef?:string;baseUrl?:string;enabled:boolean};
+export type FactoryModel={id:string;providerId:string;modelKey:string;displayName:string;capabilities:string[];enabled:boolean};
+export type FactoryAgent={id:string;name:string;kind:'ogroup'|'external'|'custom'|'webhook'|'mcp';endpointRef?:string;enabled:boolean};
+export type FactoryRoleAssignment={role:string;agentId:string;modelId?:string;fallbackModelId?:string;budgetLimitMicros?:number};
+export type FactoryConfig={mode:'managed'|'custom';providers:FactoryProvider[];models:FactoryModel[];agents:FactoryAgent[];roles:FactoryRoleAssignment[]};
 
 const baseUrl=(import.meta.env.VITE_FACTORY_API_URL||'').replace(/\/$/,'');
 const tenantId=import.meta.env.VITE_FACTORY_TENANT_ID||'';
@@ -12,6 +17,8 @@ export const factoryApi={
  snapshot:()=>request<FactorySnapshot>('/api/v1/factory/snapshot'),
  run:(runId:string)=>request<FactoryRunDetail>(`/api/v1/factory/runs/${encodeURIComponent(runId)}`),
  startRun:(input:unknown)=>request<StartRunResult>('/api/v1/factory/runs',{method:'POST',body:JSON.stringify(input)}),
+ config:()=>request<FactoryConfig>('/api/v1/factory/config'),
+ saveConfig:(input:FactoryConfig)=>request<FactoryConfig>('/api/v1/factory/config',{method:'PUT',body:JSON.stringify(input)}),
  approveGate:(runId:string,gate:'design'|'production')=>request<unknown>(`/api/v1/factory/runs/${encodeURIComponent(runId)}/gates/${gate}/approve`,{method:'POST',body:'{}'}),
  requestChanges:(runId:string,gate:'design'|'production',feedback:string)=>request<unknown>(`/api/v1/factory/runs/${encodeURIComponent(runId)}/gates/${gate}/changes`,{method:'POST',body:JSON.stringify({feedback})})
 };
