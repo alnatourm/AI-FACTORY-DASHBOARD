@@ -10,6 +10,8 @@ export type FactoryRoleAssignment={role:string;agentId:string;modelId?:string;fa
 export type FactoryConfig={mode:'managed'|'custom';providers:FactoryProvider[];models:FactoryModel[];agents:FactoryAgent[];roles:FactoryRoleAssignment[]};
 export type ProjectBrainEntry={section:string;content:unknown;version:number;updatedAt:string|null};
 export type ProjectBrain={runId:string;sections:ProjectBrainEntry[]};
+export type UsageSource='ogroup'|'customer';
+export type UsageSummary={inputTokens:number;outputTokens:number;costMicros:number;events:number;bySource:Record<UsageSource,{inputTokens:number;outputTokens:number;costMicros:number;events:number}>};
 
 const baseUrl=(import.meta.env.VITE_FACTORY_API_URL||'').replace(/\/$/,'');
 const tenantId=import.meta.env.VITE_FACTORY_TENANT_ID||'';
@@ -22,6 +24,7 @@ export const factoryApi={
  config:()=>request<FactoryConfig>('/api/v1/factory/config'),
  saveConfig:(input:FactoryConfig)=>request<FactoryConfig>('/api/v1/factory/config',{method:'PUT',body:JSON.stringify(input)}),
  brain:(runId:string)=>request<ProjectBrain>(`/api/v1/factory/runs/${encodeURIComponent(runId)}/brain`),
+ usage:()=>request<UsageSummary>('/api/v1/factory/usage'),
  saveBrain:(runId:string,section:string,content:unknown)=>request<ProjectBrainEntry>(`/api/v1/factory/runs/${encodeURIComponent(runId)}/brain/${encodeURIComponent(section)}`,{method:'PUT',body:JSON.stringify({content})}),
  approveGate:(runId:string,gate:'design'|'production')=>request<unknown>(`/api/v1/factory/runs/${encodeURIComponent(runId)}/gates/${gate}/approve`,{method:'POST',body:'{}'}),
  requestChanges:(runId:string,gate:'design'|'production',feedback:string)=>request<unknown>(`/api/v1/factory/runs/${encodeURIComponent(runId)}/gates/${gate}/changes`,{method:'POST',body:JSON.stringify({feedback})})
