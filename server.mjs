@@ -32,5 +32,5 @@ app.use('/api/factory',async(req,res)=>{
 
 const root=path.dirname(fileURLToPath(import.meta.url));
 app.use(express.static(path.join(root,'dist'),{index:false}));
-app.get('*',(req,res)=>res.sendFile(path.join(root,'dist','index.html')));
+app.use((req,res,next)=>{if(req.method!=='GET'){next();return}res.sendFile(path.join(root,'dist','index.html'));});
 app.listen(port,()=>console.log(JSON.stringify({event:'DASHBOARD_READY',port})));
