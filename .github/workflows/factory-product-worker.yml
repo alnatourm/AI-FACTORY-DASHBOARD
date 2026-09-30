@@ -117,6 +117,21 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh pr merge "$PR_NUMBER" --squash --match-head-commit "$(git rev-parse HEAD)"
+      - name: Report verified evidence to Project Brain
+        env:
+          FACTORY_CALLBACK_TOKEN: ${{ secrets.FACTORY_CALLBACK_TOKEN }}
+          FACTORY_CONTROL_API_URL: ${{ secrets.FACTORY_CONTROL_API_URL }}
+          RUN_ID: ${{ github.event.client_payload.runId }}
+          TENANT_ID: ${{ github.event.client_payload.tenant }}
+        run: |
+          if [ -z "$FACTORY_CONTROL_API_URL" ] || [ -z "$FACTORY_CALLBACK_TOKEN" ] || [ -z "$TENANT_ID" ]; then
+            echo "::notice::Project Brain evidence callback is not configured for this dispatch."
+            exit 0
+          fi
+          curl --fail-with-body -sS -X POST "$FACTORY_CONTROL_API_URL/internal/v1/factory/runs/$RUN_ID/evidence" \\
+            -H "x-factory-control-key: $FACTORY_CALLBACK_TOKEN" -H "content-type: application/json" \\
+            --data "$(jq -nc --arg tenant "$TENANT_ID" --arg workflow "$GITHUB_RUN_ID" --arg sha "$GITHUB_SHA" '{tenant:$tenant,kind:"testing",evidence:{status:"verified",typecheck:"passed",tests:"passed",build:"passed",workflowRun:$workflow,commit:$sha}}')"
+
       - name: Report completion to Factory
         if: success()
         env:
