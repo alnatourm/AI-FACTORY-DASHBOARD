@@ -14,7 +14,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm install
+      - name: Install dependencies with registry retry
+        shell: bash
+        run: |
+          set -e
+          for attempt in 1 2 3; do
+            npm install && exit 0
+            if [ "$attempt" = "3" ]; then exit 1; fi
+            echo "npm registry attempt $attempt failed; retrying..."
+            sleep $((attempt * 5))
+          done
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
