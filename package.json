@@ -17,7 +17,8 @@
     "react": "latest",
     "react-dom": "latest",
     "lucide-react": "latest",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "google-auth-library": "^10.3.0"
   },
   "devDependencies": {
     "@types/react": "latest",
