@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import {OAuth2Client} from 'google-auth-library';
 import express from 'express';
+import cookieParser from 'cookie-parser';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -20,8 +21,10 @@ if(!factoryToken) throw new Error('FACTORY_CONTROL_API_KEY_REQUIRED');
 
 app.disable('x-powered-by');
 app.use(express.json({limit:'256kb'}));
+app.use(cookieParser());
 
-app.get('/api/auth/status',(_req,res)=>res.json({data:{google:oidcReady}}));
+app.get('/api/auth/status',(req,res)=>res.json({data:{google:oidcReady,authenticated:Boolean(req.cookies?.ogroup_session)}}));
+app.post('/api/auth/logout',(_req,res)=>{res.clearCookie('ogroup_session',{httpOnly:true,secure:true,sameSite:'lax',path:'/'});res.status(204).send();});
 app.get('/auth/google',(req,res)=>{
   if(!oauth){res.status(503).json({error:{code:'GOOGLE_OIDC_NOT_CONFIGURED'}});return;}
   const state=crypto.randomBytes(32).toString('base64url');
