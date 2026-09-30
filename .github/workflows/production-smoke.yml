@@ -5,9 +5,12 @@ on:
     branches: [main]
   push:
     branches: [main]
+permissions:
+  contents: read
 jobs:
   smoke:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Verify public dashboard and protected Factory boundary
         shell: bash
