@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 const app=express();
 const port=Number(process.env.PORT||3000);
-const factoryUrl=(process.env.FACTORY_API_URL||process.env.VITE_FACTORY_API_URL||'').replace(/\/$/,'');
+const factoryUrl=(process.env.FACTORY_API_URL||'').replace(/\/$/,'');
 const factoryToken=(process.env.FACTORY_CONTROL_API_KEY||'').trim();
 const googleClientId=(process.env.GOOGLE_OIDC_CLIENT_ID||'').trim();
 const googleClientSecret=(process.env.GOOGLE_OIDC_CLIENT_SECRET||'').trim();
