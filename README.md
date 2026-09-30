@@ -1,89 +1,125 @@
 # OGroup AI Factory Dashboard
 
-Customer-facing SaaS control plane for the **OGroup AI Factory**.
+Customer-facing SaaS and Product Owner control plane for **OGroup AI Factory**.
+
+Production: https://ai-factory-dashboard-production.up.railway.app
+
+The core Factory runtime, orchestrator, Watchdog, agents, persistence, BYOK vault and governed execution remain in `alnatourm/ogroup-ai-factory`.
 
 ## Product vision
 
-**Use our workforce. Or bring yours.**
+AI Factory is a software-production SaaS with two customer modes:
 
-Customers can **Build For Me** with OGroup-managed AI or **Build With My AI** using their own providers/models. Both modes use the same core:
+1. **Build For Me** — use OGroup-managed AI agents/models.
+2. **Build With My AI** — connect customer-selected agents/models/providers/BYOK.
+
+Both modes use the same Factory:
 
 `Project Brain → Orchestrator → Roles → Agents → Models → Providers → Build → Verify → Repair → Deploy → Watchdog`
 
-The Dashboard is the simple human control plane. Factory runtime, orchestration, agents, Watchdog, persistence and provider execution remain in `alnatourm/ogroup-ai-factory`. Closing the Dashboard must never stop Factory execution.
+The customer experience should stay simple: describe the software, approve important decisions, and review the result. Factory internals stay behind the control plane.
 
-## Current SaaS
+## Current Dashboard capabilities
 
-- Factory Home / My Software
-- Create Product / Build Software
-- Project Control Room and Project Brain
-- My Factory: roles, agents, models and providers
-- Usage & Billing
-- Design/production human gates
+- Factory Home and real project/run data
+- Create Product
+- Project Control Room
+- Human approval/review screens
+- Factory Activity and attention views
 - Factory Health / Watchdog
-- Needs My Attention and Factory Activity
+- My Factory configuration
+- Managed vs Custom Factory mode
+- Role → Agent → Model → Provider mapping
+- Project Brain read/write bridge
+- Usage & Billing view
+- Server-side secure Factory BFF
 
-The approved Stitch direction is frozen as the customer UX reference.
+## Security architecture
 
-## Production security architecture
+The browser no longer talks directly to the privileged Factory control API.
 
-Production browser traffic no longer talks directly to the Factory API:
+`Browser → Dashboard BFF → authenticated Factory API → PostgreSQL`
 
-`Browser → Dashboard server/BFF → authenticated Factory API → PostgreSQL`
+Production credentials are server-side only:
 
-The Dashboard server serves Vite and proxies `/api/factory/*`. It injects the Factory bearer credential and transitional tenant context server-side. Privileged credentials must never be placed in `VITE_*` or returned to the browser.
-
-Server-only Dashboard variables:
 - `FACTORY_API_URL`
-- `FACTORY_CONTROL_API_KEY`
 - `FACTORY_TENANT_ID`
+- `FACTORY_CONTROL_API_KEY`
 
-Factory production has `FACTORY_REQUIRE_AUTH=true`. The BFF boundary protects the current bridge. Full customer Google OIDC/session/membership authorization is still required before the transitional tenant context is considered final SaaS identity/isolation.
+The Factory runtime has `FACTORY_REQUIRE_AUTH=true`.
 
-## Persistence
+**Never place privileged credentials in `VITE_*` variables or browser code.**
 
-Production uses PostgreSQL with a persistent Railway volume and `PGDATA=/var/lib/postgresql/data/pgdata`. Durable runtime implementations exist for Project Brain, Factory configuration, usage events and the encrypted BYOK vault.
+The current BFF protects the Factory control credential and server-owned tenant context. Full customer Google OIDC/session/membership isolation is still required before public multi-tenant release.
 
-BYOK is encrypted server-side with AES-256-GCM. Raw provider secrets must never be returned to the browser. Never use a real provider key for persistence testing.
+## Verified production status
 
-Volume-level PostgreSQL persistence across redeployment is verified. Application-level persistence verification is next.
+As of 2026-09-30:
 
-## Verified production state: 2026-09-30
+- Dashboard secure-BFF fix commit: `8b672097fbef4185995b5fab9c61f1bc2864b95c`
+- Dashboard Railway deployment: `0b39a9b7-eeae-4e2d-9f06-66b75035cf04` — **SUCCESS**
+- Dashboard runtime emitted `DASHBOARD_READY` on port 8080.
+- Factory API authentication is enabled in production.
+- Factory API deployment is **SUCCESS**.
+- PostgreSQL has a persistent Railway volume mounted at `/var/lib/postgresql/data`.
+- PostgreSQL uses `PGDATA=/var/lib/postgresql/data/pgdata`.
+- PostgreSQL cluster persistence across redeployment has already been verified.
+- Project Brain, Factory configuration, usage metering and encrypted BYOK persistence code are deployed.
 
-- Secure Dashboard BFF: PR #51, merged.
-- BFF merge SHA: `c6469115f96f5c89d458715564855db0962ede9b`.
-- Express 5 production fix SHA: `8b672097fbef4185995b5fab9c61f1bc2864b95c`.
-- Dashboard Railway deployment `0b39a9b7-eeae-4e2d-9f06-66b75035cf04`: **SUCCESS**.
-- Dashboard runtime: `DASHBOARD_READY`, port 8080.
-- Factory authenticated deployment `fd2d414f-4786-462a-a06c-1aeb08146455`: **SUCCESS**.
-- Factory production commit: `9e5c8a2217bee67f29965828ccb567dc797c1a24`.
-- PostgreSQL volume persistence: **VERIFIED**.
-- Watchdog remains enabled continuously.
+## Test status
 
-## Next verification
+Deployment is green, but the full application-level persistence/E2E test is **not complete**.
 
-Do not call the SaaS finished until:
-1. unauthenticated direct Factory control access is rejected;
-2. Dashboard BFF still reaches protected Factory;
-3. Project Brain write/read passes;
-4. Factory config write/read passes;
-5. usage POST/GET passes;
-6. fake non-sensitive BYOK PUT/GET returns metadata only, never raw secret;
-7. data survives Factory API redeploy;
-8. data survives PostgreSQL restart;
-9. real customer Google OIDC/session/membership authorization is verified;
-10. full customer E2E passes.
+Still to verify:
 
-## Commands
+1. Direct unauthenticated Factory control request is rejected with `401`.
+2. Dashboard → BFF → authenticated Factory API works end-to-end.
+3. Write/read Project Brain test data.
+4. Write/read Factory configuration test data.
+5. POST/read usage test data.
+6. Store a **fake/non-sensitive** BYOK credential and confirm the API returns metadata only, never plaintext.
+7. Redeploy the Factory API and confirm all test data survives.
+8. Restart PostgreSQL and confirm all test data survives.
+9. Remove test records where practical.
 
-```bash
-npm install
-npm run dev
-npm run build
-npm test
-npm start
-```
+Do not use real customer/provider secrets for these tests.
 
-## Product Owner rule
+## Remaining P0 before public SaaS
 
-The Product Owner describes the software, approves important design/release decisions and reviews outputs. Repository management, CI retries, provider plumbing, repairs, deployments and Watchdog operation belong to the platform, not the customer.
+- Real Google OIDC/customer session authentication
+- User → organization/tenant membership enforcement
+- Per-user authorization/RBAC at the Dashboard BFF/API boundary
+- Complete tenant-isolation E2E tests
+- Verify production database migrations
+- BYOK UI and provider execution wiring
+- Full production E2E test
+
+## Working rules
+
+- Product Owner should not babysit GitHub, CI or Railway.
+- Build success is not deployment success.
+- Never call a change fixed until the exact commit, CI, Railway deployment and live behavior are verified where applicable.
+- Never expose secrets in chat, logs or browser bundles.
+- Keep Watchdog running continuously.
+- Do not use the unfinished AI Factory to build itself. Develop the repositories directly.
+- Engineering checks run automatically and should not become Product Owner chores.
+- Customer repositories should default private.
+- Missing capabilities must be explicit, never represented as fake PASS/green states.
+
+## Repository boundaries
+
+### Dashboard repository
+
+`alnatourm/AI-FACTORY-DASHBOARD`
+
+Owns customer/Product Owner UI and its server-side BFF.
+
+### Factory repository
+
+`alnatourm/ogroup-ai-factory`
+
+Owns orchestration, Watchdog, agents, Factory control API, persistence, security enforcement, BYOK vault, usage metering and execution evidence.
+
+## Next action
+
+Run the pending production security + application persistence test suite. Fix any failure directly, redeploy, and verify again before moving to the remaining SaaS UI and customer authentication work.
