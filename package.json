@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "start": "node server.mjs",
     "typecheck": "tsc --noEmit",
     "test": "tsx src/watchdog.test.ts"
   },
@@ -15,7 +16,8 @@
     "typescript": "latest",
     "react": "latest",
     "react-dom": "latest",
-    "lucide-react": "latest"
+    "lucide-react": "latest",
+    "express": "^5.1.0"
   },
   "devDependencies": {
     "@types/react": "latest",
