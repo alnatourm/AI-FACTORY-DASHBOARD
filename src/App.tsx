@@ -16,19 +16,6 @@ const copy={
  ar:{brand:'أو جروب',sub:'مصنع الذكاء الاصطناعي',online:'المصنع متصل',home:'الرئيسية',create:'إنشاء منتج',control:'غرفة تحكم المشروع',brain:'ذاكرة المشروع',design:'اعتماد التصميم',review:'مراجعة المنتج',agents:'سجل الوكلاء',health:'صحة المصنع',attention:'تتطلب انتباهي',activity:'نشاط المصنع',factory:'مصنعي',usage:'الاستخدام والفوترة',newProduct:'بناء منتج جديد',title:'نظرة عامة على المصنع',desc:'كل ما يبنيه المصنع في مكان واحد.',back:'العودة للمصنع',approve:'موافقة',reject:'طلب تعديلات'}
 };
 
-const agents=[
- ['OGroup Factory Orchestrator','Orchestration','Factory controller','ACTIVE'],
- ['Product Generator / Factory logic','Product definition','Deterministic Factory logic','ACTIVE'],
- ['Architecture stage','Architecture','Orchestrator stage · no separate AI adapter','READY'],
- ['Stitch Design Adapter','Design','Google Stitch','READY'],
- ['OGroup Design Review Agent','Design review','Structural/content review','READY'],
- ['Antigravity Build Agent','Build','Google Antigravity','RUNNING'],
- ['CI / Orchestrator QA','QA','GitHub Actions + Factory verification','ACTIVE'],
- ['Security verification stage','Security','Rules/checks · specialist adapter not configured','READY'],
- ['Engineering Review','Review','Factory / CI / human gate','READY'],
- ['Watchdog','Progress supervision','Deterministic Factory service','ACTIVE'],
- ['Release Controller','Release','Factory controller + human authority','READY']
-];
 
 export function App(){
  const [lang,setLang]=useState<Lang>('en'); const [screen,setScreen]=useState<Screen>('home');
@@ -57,7 +44,7 @@ export function App(){
   <aside className={'sidebar '+(menu?'open':'')}>
    <div className="brand"><div className="mark"><Factory size={21}/></div><div><b>{t.brand}</b><span>{t.sub}</span></div></div>
    <nav>{nav.map(([id,label,Icon])=><button key={id} className={'nav-btn '+(screen===id?'active':'')} onClick={()=>go(id)}><Icon size={18}/><span>{label}</span></button>)}</nav>
-   <div className="sidebar-footer"><span className="system-line"><i className="status-dot green"/>{t.online}</span><small>Watchdog · healthy</small></div>
+   <div className="sidebar-footer"><span className="system-line"><i className={"status-dot "+(!factoryError&&factorySnapshot?"green":"")}/>{factoryError?"Factory unavailable":factorySnapshot?t.online:"Connecting…"}</span><small>Watchdog · {String(factorySnapshot?.health?.watchdog??"checking").toLowerCase()}</small></div>
   </aside>
   <main className="content">
    <Topbar title={screen==='home'?t.title:nav.find(n=>n[0]===screen)?.[1]||t.title} subtitle={screen==='home'?t.desc:'AI Factory · Product Owner Control Plane'} lang={lang} setLang={setLang} onCreate={()=>go('create')} factoryLive={factoryConfigured&&!factoryError} factoryConfigured={factoryConfigured} auth={auth} onLogout={async()=>{await fetch('/api/auth/logout',{method:'POST',credentials:'include'});setAuth({...auth,authenticated:false})}}/>
