@@ -11,7 +11,8 @@ export type FactoryConfig={mode:'managed'|'custom';providers:FactoryProvider[];m
 export type ProjectBrainEntry={section:string;content:unknown;version:number;updatedAt:string|null};
 export type ProjectBrain={runId:string;sections:ProjectBrainEntry[]};
 export type UsageSource='ogroup'|'customer';
-export type UsageSummary={inputTokens:number;outputTokens:number;costMicros:number;events:number;bySource:Record<UsageSource,{inputTokens:number;outputTokens:number;costMicros:number;events:number}>};
+export type UsageBucket={inputTokens:number;outputTokens:number;costMicros:number;events:number};
+export type UsageSummary={total:UsageBucket;bySource:Record<UsageSource,UsageBucket>};
 
 const baseUrl='/api/factory';
 export const factoryConfigured=true;
