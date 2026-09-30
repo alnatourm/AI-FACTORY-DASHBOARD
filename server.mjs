@@ -23,7 +23,7 @@ app.disable('x-powered-by');
 app.use(express.json({limit:'256kb'}));
 app.use(cookieParser());
 
-app.get('/api/auth/status',(req,res)=>res.json({data:{google:oidcReady,authenticated:Boolean(req.cookies?.ogroup_session)}}));
+app.get('/api/auth/status',async(req,res)=>{const session=req.cookies?.ogroup_session;if(!session){res.json({data:{google:oidcReady,authenticated:false}});return;}try{const upstream=await fetch(factoryUrl+'/internal/v1/auth/session/introspect',{method:'POST',headers:{'authorization':`Bearer ${factoryToken}`,'content-type':'application/json'},body:JSON.stringify({token:session})});const result=await upstream.json().catch(()=>null);res.json({data:{google:oidcReady,authenticated:Boolean(upstream.ok&&result?.data?.active)}});}catch{res.json({data:{google:oidcReady,authenticated:false}});}});
 app.post('/api/auth/logout',async(req,res)=>{const session=req.cookies?.ogroup_session;if(session){await fetch(factoryUrl+'/internal/v1/auth/session/revoke',{method:'POST',headers:{'authorization':`Bearer ${factoryToken}`,'content-type':'application/json'},body:JSON.stringify({token:session})}).catch(()=>null);}res.clearCookie('ogroup_session',{httpOnly:true,secure:true,sameSite:'lax',path:'/'});res.status(204).send();});
 app.get('/auth/google',(req,res)=>{
   if(!oauth){res.status(503).json({error:{code:'GOOGLE_OIDC_NOT_CONFIGURED'}});return;}
