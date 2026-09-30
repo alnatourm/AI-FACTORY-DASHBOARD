@@ -16,8 +16,19 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          DASH_STATUS=$(curl -sS -o /tmp/dashboard -w "%{http_code}" https://ai-factory-dashboard-production.up.railway.app/)
-          test "$DASH_STATUS" = "200"
-          FACTORY_STATUS=$(curl -sS -o /tmp/factory -w "%{http_code}" -H "x-tenant-id: ogroup" https://factory-control-api-production.up.railway.app/api/v1/factory/snapshot)
-          test "$FACTORY_STATUS" = "401"
+          curl_status() {
+            local url="$1"
+            local outfile="$2"
+            local status=""
+            for attempt in 1 2 3; do
+              status=$(curl --connect-timeout 10 --max-time 20 --retry 2 --retry-delay 2 --retry-all-errors -sS -o "$outfile" -w "%{http_code}" "$url" || true)
+              if [ "$status" != "000" ] && [ -n "$status" ]; then break; fi
+              sleep 3
+            done
+            printf '%s' "$status"
+          }
+          DASH_STATUS=$(curl_status https://ai-factory-dashboard-production.up.railway.app/ /tmp/dashboard)
+          FACTORY_STATUS=$(curl_status https://factory-control-api-production.up.railway.app/api/v1/factory/snapshot /tmp/factory)
           echo "dashboard=$DASH_STATUS factory_unauthenticated=$FACTORY_STATUS"
+          test "$DASH_STATUS" = "200"
+          test "$FACTORY_STATUS" = "401"
