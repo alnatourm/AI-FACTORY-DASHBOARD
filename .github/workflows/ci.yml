@@ -5,6 +5,7 @@ on:
     branches: [main, build/dashboard-v0.1]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   verify:
