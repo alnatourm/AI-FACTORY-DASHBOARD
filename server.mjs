@@ -42,8 +42,11 @@ app.get('/auth/google/callback',async(req,res)=>{
     const ticket=await oauth.verifyIdToken({idToken:tokens.id_token,audience:googleClientId});
     const payload=ticket.getPayload();
     if(!payload?.sub||!payload.email||payload.email_verified!==true){res.status(401).send('Google identity could not be verified.');return;}
-    // Identity is verified here. Session/membership issuance is the next server-side slice.
-    res.status(501).json({error:{code:'MEMBERSHIP_SESSION_NOT_WIRED'},data:{email:payload.email}});
+    const bridge=await fetch(factoryUrl+'/internal/v1/auth/google/session',{method:'POST',headers:{'authorization':`Bearer ${factoryToken}`,'content-type':'application/json'},body:JSON.stringify({subject:payload.sub,email:payload.email,displayName:payload.name??null})});
+    const result=await bridge.json().catch(()=>null);
+    if(!bridge.ok||!result?.data?.token){res.status(bridge.status===403?403:502).json({error:{code:result?.error?.code??'SESSION_BRIDGE_FAILED'}});return;}
+    res.cookie('ogroup_session',result.data.token,{httpOnly:true,secure:true,sameSite:'lax',path:'/',maxAge:7*24*60*60*1000});
+    res.redirect('/');
   }catch{res.status(401).send('Google sign-in failed.');}
 });
 
