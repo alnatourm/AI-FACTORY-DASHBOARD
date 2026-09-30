@@ -29,6 +29,10 @@ jobs:
           }
           DASH_STATUS=$(curl_status https://ai-factory-dashboard-production.up.railway.app/ /tmp/dashboard)
           FACTORY_STATUS=$(curl_status https://factory-control-api-production.up.railway.app/api/v1/factory/snapshot /tmp/factory)
-          echo "dashboard=$DASH_STATUS factory_unauthenticated=$FACTORY_STATUS"
+          DASH_API_STATUS=$(curl_status https://ai-factory-dashboard-production.up.railway.app/api/factory/snapshot /tmp/dashboard-api)
+          AUTH_STATUS=$(curl_status https://ai-factory-dashboard-production.up.railway.app/api/auth/status /tmp/auth-status)
+          echo "dashboard=$DASH_STATUS dashboard_api_unauthenticated=$DASH_API_STATUS factory_unauthenticated=$FACTORY_STATUS auth_status=$AUTH_STATUS"
           test "$DASH_STATUS" = "200"
+          test "$DASH_API_STATUS" = "401"
           test "$FACTORY_STATUS" = "401"
+          test "$AUTH_STATUS" = "200"
