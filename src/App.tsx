@@ -33,13 +33,13 @@ const agents=[
 export function App(){
  const [lang,setLang]=useState<Lang>('en'); const [screen,setScreen]=useState<Screen>('home');
  const [menu,setMenu]=useState(false); const [toast,setToast]=useState('');
- const [auth,setAuth]=useState({google:false,authenticated:false});
+ const [auth,setAuth]=useState({google:false,authenticated:false}); const [authReady,setAuthReady]=useState(false);
  const [factorySnapshot,setFactorySnapshot]=useState<FactorySnapshot|null>(null); const [factoryError,setFactoryError]=useState('');
  const [selectedRunId,setSelectedRunId]=useState(''); const [selectedRun,setSelectedRun]=useState<FactoryRunDetail|null>(null);
  const t=copy[lang]; const rtl=lang==='ar'; const stageNames=rtl?arStages:stages;
  useEffect(()=>{document.documentElement.dir=rtl?'rtl':'ltr';document.documentElement.lang=lang},[rtl,lang]);
- useEffect(()=>{fetch('/api/auth/status',{credentials:'include'}).then(r=>r.json()).then(x=>setAuth(x.data??{google:false,authenticated:false})).catch(()=>{})},[]);
- useEffect(()=>{ if(!factoryConfigured) return; let alive=true; const load=()=>factoryApi.snapshot().then(x=>{if(alive){setFactorySnapshot(x);setFactoryError('')}}).catch(e=>{if(alive)setFactoryError(e instanceof Error?e.message:'FACTORY_API_ERROR')}); load(); const timer=setInterval(load,30000); return()=>{alive=false;clearInterval(timer)} },[]);
+ useEffect(()=>{fetch('/api/auth/status',{credentials:'include'}).then(r=>r.json()).then(x=>setAuth(x.data??{google:false,authenticated:false})).catch(()=>{}).finally(()=>setAuthReady(true))},[]);
+ useEffect(()=>{ if(!factoryConfigured||!auth.authenticated) return; let alive=true; const load=()=>factoryApi.snapshot().then(x=>{if(alive){setFactorySnapshot(x);setFactoryError('')}}).catch(e=>{if(alive)setFactoryError(e instanceof Error?e.message:'FACTORY_API_ERROR')}); load(); const timer=setInterval(load,30000); return()=>{alive=false;clearInterval(timer)} },[]);
  useEffect(()=>{if(!selectedRunId){setSelectedRun(null);return} factoryApi.run(selectedRunId).then(setSelectedRun).catch(()=>setSelectedRun(null))},[selectedRunId,factorySnapshot]);
  const selectRun=(id:string,next:Screen='control')=>{setSelectedRunId(id);go(next)};
  const nav=[
@@ -49,6 +49,8 @@ export function App(){
  ] as const;
  const go=(s:Screen)=>{setScreen(s);setMenu(false);window.scrollTo({top:0,behavior:'smooth'})};
  const notify=(m:string)=>{setToast(m);setTimeout(()=>setToast(''),2200)};
+ if(!authReady)return <div className="auth-gate"><div className="panel"><Factory size={28}/><h1>OGroup AI Factory</h1><p>Checking your secure session…</p></div></div>;
+ if(!auth.authenticated)return <div className="auth-gate"><div className="panel"><Factory size={28}/><h1>OGroup AI Factory</h1><p>Sign in to open your Product Owner control plane.</p>{auth.google?<a className="primary" href="/auth/google">Sign in with Google</a>:<span className="system-line">Google sign-in setup pending</span>}</div></div>;
  return <div className="shell">
   <div className="mobile-header"><button className="icon-btn" onClick={()=>setMenu(!menu)}>{menu?<X/>:<Menu/>}</button><b>{t.brand}</b><button className="lang-mini" onClick={()=>setLang(rtl?'en':'ar')}><Globe size={15}/>{rtl?'EN':'العربية'}</button></div>
   {menu&&<div className="mobile-backdrop" onClick={()=>setMenu(false)}/>}
