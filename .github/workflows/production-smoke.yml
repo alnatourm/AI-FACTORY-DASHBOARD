@@ -1,0 +1,16 @@
+name: Production Smoke Test
+on:
+  workflow_dispatch:
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify public dashboard and protected Factory boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          DASH_STATUS=$(curl -sS -o /tmp/dashboard -w "%{http_code}" https://ai-factory-dashboard-production.up.railway.app/)
+          test "$DASH_STATUS" = "200"
+          FACTORY_STATUS=$(curl -sS -o /tmp/factory -w "%{http_code}" -H "x-tenant-id: ogroup" https://factory-control-api-production.up.railway.app/api/v1/factory/snapshot)
+          test "$FACTORY_STATUS" = "401"
+          echo "dashboard=$DASH_STATUS factory_unauthenticated=$FACTORY_STATUS"
