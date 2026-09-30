@@ -12,7 +12,8 @@ export type ProjectBrainEntry={section:string;content:unknown;version:number;upd
 export type ProjectBrain={runId:string;sections:ProjectBrainEntry[]};
 export type UsageSource='ogroup'|'customer';
 export type UsageBucket={inputTokens:number;outputTokens:number;costMicros:number;events:number};
-export type UsageSummary={total:UsageBucket;bySource:Record<UsageSource,UsageBucket>};\nexport type ByokCredential={credentialRef:string;provider:string;configured:boolean;updatedAt?:string};
+export type UsageSummary={total:UsageBucket;bySource:Record<UsageSource,UsageBucket>};
+export type ByokCredential={credentialRef:string;provider:string;configured:boolean;updatedAt?:string};
 
 const baseUrl='/api/factory';
 export const factoryConfigured=true;
@@ -24,7 +25,10 @@ export const factoryApi={
  config:()=>request<FactoryConfig>('/api/v1/factory/config'),
  saveConfig:(input:FactoryConfig)=>request<FactoryConfig>('/api/v1/factory/config',{method:'PUT',body:JSON.stringify(input)}),
  brain:(runId:string)=>request<ProjectBrain>(`/api/v1/factory/runs/${encodeURIComponent(runId)}/brain`),
- usage:()=>request<UsageSummary>('/api/v1/factory/usage'),\n byok:()=>request<ByokCredential[]>('/api/v1/factory/byok'),\n saveByok:(credentialRef:string,provider:string,secret:string)=>request<ByokCredential>(`/api/v1/factory/byok/${encodeURIComponent(credentialRef)}`,{method:'PUT',body:JSON.stringify({provider,secret})}),\n deleteByok:async(credentialRef:string)=>{const response=await fetch(baseUrl+`/api/v1/factory/byok/${encodeURIComponent(credentialRef)}`,{method:'DELETE',credentials:'include'});if(!response.ok)throw new Error('FACTORY_API_ERROR')},
+ usage:()=>request<UsageSummary>('/api/v1/factory/usage'),
+ byok:()=>request<ByokCredential[]>('/api/v1/factory/byok'),
+ saveByok:(credentialRef:string,provider:string,secret:string)=>request<ByokCredential>(`/api/v1/factory/byok/${encodeURIComponent(credentialRef)}`,{method:'PUT',body:JSON.stringify({provider,secret})}),
+ deleteByok:async(credentialRef:string)=>{const response=await fetch(baseUrl+`/api/v1/factory/byok/${encodeURIComponent(credentialRef)}`,{method:'DELETE',credentials:'include'});if(!response.ok)throw new Error('FACTORY_API_ERROR')},
  saveBrain:(runId:string,section:string,content:unknown)=>request<ProjectBrainEntry>(`/api/v1/factory/runs/${encodeURIComponent(runId)}/brain/${encodeURIComponent(section)}`,{method:'PUT',body:JSON.stringify({content})}),
  approveGate:(runId:string,gate:'design'|'production')=>request<unknown>(`/api/v1/factory/runs/${encodeURIComponent(runId)}/gates/${gate}/approve`,{method:'POST',body:'{}'}),
  requestChanges:(runId:string,gate:'design'|'production',feedback:string)=>request<unknown>(`/api/v1/factory/runs/${encodeURIComponent(runId)}/gates/${gate}/changes`,{method:'POST',body:JSON.stringify({feedback})})
