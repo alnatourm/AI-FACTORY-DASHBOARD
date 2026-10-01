@@ -33,6 +33,8 @@ export const factoryApi={
  memberships:()=>request<WorkspaceMembership[]>('/api/v1/factory/account/memberships'),
  workspaceRoles:()=>request<WorkspaceRole[]>('/api/v1/factory/account/roles'),
  assignMembershipRoles:(membershipId:string,roleIds:string[])=>request<void>(`/api/v1/factory/account/memberships/${encodeURIComponent(membershipId)}/roles`,{method:'PUT',body:JSON.stringify({roleIds})}),
+ invitations:()=>request<Array<{id:string;email:string;expires_at:string;accepted_at:string|null;created_at:string}>>('/api/v1/factory/account/invitations'),
+ createInvitation:(email:string)=>request<{id:string;email:string;inviteToken:string;expiresAt:string}>('/api/v1/factory/account/invitations',{method:'POST',body:JSON.stringify({email})}),
  byok:()=>request<ByokCredential[]>('/api/v1/factory/byok'),
  saveByok:(credentialRef:string,provider:string,secret:string)=>request<ByokCredential>(`/api/v1/factory/byok/${encodeURIComponent(credentialRef)}`,{method:'PUT',body:JSON.stringify({provider,secret})}),
  deleteByok:async(credentialRef:string)=>{const response=await fetch(baseUrl+`/api/v1/factory/byok/${encodeURIComponent(credentialRef)}`,{method:'DELETE',credentials:'include'});if(!response.ok)throw new Error('FACTORY_API_ERROR')},
