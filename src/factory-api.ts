@@ -14,6 +14,9 @@ export type UsageSource='ogroup'|'customer';
 export type UsageBucket={inputTokens:number;outputTokens:number;costMicros:number;events:number};
 export type UsageSummary={total:UsageBucket;bySource:Record<UsageSource,UsageBucket>};
 export type ByokCredential={credentialRef:string;provider:string;configured:boolean;updatedAt?:string};
+export type CommercialState={subscription:null|{id:string;planId:string;planName:string;status:string;provider:string|null;monthlyPriceCents:number;includedProjects:number;includedAiCostMicros:number;currentPeriodStart:string|null;currentPeriodEnd:string|null};quota:{periodKey:string;projectsCreated:number;aiCostMicros:number};billing:Array<{provider:string;eventType:string;amountCents:number|null;currency:string|null;occurredAt:string}>};
+export type WorkspaceMembership={id:string;user_id:string;email:string;display_name:string|null;created_at:string;roles:Array<{id:string;name:string}>};
+export type WorkspaceRole={id:string;name:string;permissions:string[]};
 
 const baseUrl='/api/factory';
 export const factoryConfigured=true;
@@ -26,6 +29,10 @@ export const factoryApi={
  saveConfig:(input:FactoryConfig)=>request<FactoryConfig>('/api/v1/factory/config',{method:'PUT',body:JSON.stringify(input)}),
  brain:(runId:string)=>request<ProjectBrain>(`/api/v1/factory/runs/${encodeURIComponent(runId)}/brain`),
  usage:()=>request<UsageSummary>('/api/v1/factory/usage'),
+ commercial:()=>request<CommercialState>('/api/v1/factory/commercial'),
+ memberships:()=>request<WorkspaceMembership[]>('/api/v1/factory/account/memberships'),
+ workspaceRoles:()=>request<WorkspaceRole[]>('/api/v1/factory/account/roles'),
+ assignMembershipRoles:(membershipId:string,roleIds:string[])=>request<void>(`/api/v1/factory/account/memberships/${encodeURIComponent(membershipId)}/roles`,{method:'PUT',body:JSON.stringify({roleIds})}),
  byok:()=>request<ByokCredential[]>('/api/v1/factory/byok'),
  saveByok:(credentialRef:string,provider:string,secret:string)=>request<ByokCredential>(`/api/v1/factory/byok/${encodeURIComponent(credentialRef)}`,{method:'PUT',body:JSON.stringify({provider,secret})}),
  deleteByok:async(credentialRef:string)=>{const response=await fetch(baseUrl+`/api/v1/factory/byok/${encodeURIComponent(credentialRef)}`,{method:'DELETE',credentials:'include'});if(!response.ok)throw new Error('FACTORY_API_ERROR')},
