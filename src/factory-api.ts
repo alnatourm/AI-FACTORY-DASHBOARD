@@ -39,4 +39,6 @@ export const factoryApi={
  saveBrain:(runId:string,section:string,content:unknown)=>request<ProjectBrainEntry>(`/api/v1/factory/runs/${encodeURIComponent(runId)}/brain/${encodeURIComponent(section)}`,{method:'PUT',body:JSON.stringify({content})}),
  approveGate:(runId:string,gate:'design'|'production')=>request<unknown>(`/api/v1/factory/runs/${encodeURIComponent(runId)}/gates/${gate}/approve`,{method:'POST',body:'{}'}),
  requestChanges:(runId:string,gate:'design'|'production',feedback:string)=>request<unknown>(`/api/v1/factory/runs/${encodeURIComponent(runId)}/gates/${gate}/changes`,{method:'POST',body:JSON.stringify({feedback})})
-};
+};  invitations:()=>request<Array<{id:string;email:string;expires_at:string;accepted_at:string|null;created_at:string}>>('/api/v1/factory/account/invitations'),
+  createInvitation:(email:string)=>request<{id:string;email:string;inviteToken:string;expiresAt:string}>('/api/v1/factory/account/invitations',{method:'POST',body:JSON.stringify({email})}),
+
