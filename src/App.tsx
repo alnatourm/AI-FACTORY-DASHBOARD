@@ -26,7 +26,7 @@ export function App(){
  const t=copy[lang]; const rtl=lang==='ar'; const stageNames=rtl?arStages:stages;
  useEffect(()=>{document.documentElement.dir=rtl?'rtl':'ltr';document.documentElement.lang=lang},[rtl,lang]);
  useEffect(()=>{fetch('/api/auth/status',{credentials:'include'}).then(r=>r.json()).then(x=>setAuth(x.data??{google:false,authenticated:false})).catch(()=>{}).finally(()=>setAuthReady(true))},[]);
- useEffect(()=>{ if(!factoryConfigured||!auth.authenticated) return; let alive=true; const load=()=>factoryApi.snapshot().then(x=>{if(alive){setFactorySnapshot(x);setFactoryError('')}}).catch(e=>{if(alive)setFactoryError(e instanceof Error?e.message:'FACTORY_API_ERROR')}); load(); const timer=setInterval(load,30000); return()=>{alive=false;clearInterval(timer)} },[]);
+ useEffect(()=>{ if(!factoryConfigured||!auth.authenticated) return; let alive=true; const load=()=>factoryApi.snapshot().then(x=>{if(alive){setFactorySnapshot(x);setFactoryError('')}}).catch(e=>{if(alive)setFactoryError(e instanceof Error?e.message:'FACTORY_API_ERROR')}); load(); const timer=setInterval(load,30000); return()=>{alive=false;clearInterval(timer)} },[auth.authenticated]);
  useEffect(()=>{if(!selectedRunId){setSelectedRun(null);return} factoryApi.run(selectedRunId).then(setSelectedRun).catch(()=>setSelectedRun(null))},[selectedRunId,factorySnapshot]);
  const selectRun=(id:string,next:Screen='control')=>{setSelectedRunId(id);go(next)};
  const nav=[
