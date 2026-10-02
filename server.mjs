@@ -59,6 +59,7 @@ app.use('/api/factory',async(req,res)=>{
     const session=req.cookies?.ogroup_session;
     if(!session){res.status(401).json({error:{code:'AUTHENTICATION_REQUIRED'}});return;}
     const headers={'authorization':`Bearer ${session}`};
+    const idempotencyKey=req.header('idempotency-key'); if(idempotencyKey)headers['idempotency-key']=idempotencyKey;
     if(req.method!=='GET'&&req.method!=='HEAD') headers['content-type']='application/json';
     const upstream=await fetch(target,{method:req.method,headers,body:req.method==='GET'||req.method==='HEAD'?undefined:JSON.stringify(req.body??{})});
     const body=await upstream.text();
