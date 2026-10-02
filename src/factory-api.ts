@@ -24,7 +24,7 @@ async function request<T>(path:string,init?:RequestInit):Promise<T>{const respon
 export const factoryApi={
  snapshot:()=>request<FactorySnapshot>('/api/v1/factory/snapshot'),
  run:(runId:string)=>request<FactoryRunDetail>(`/api/v1/factory/runs/${encodeURIComponent(runId)}`),
- startRun:(input:unknown)=>request<StartRunResult>('/api/v1/factory/runs',{method:'POST',body:JSON.stringify(input)}),
+ startRun:(input:unknown,idempotencyKey:string)=>request<StartRunResult>('/api/v1/factory/runs',{method:'POST',headers:{'idempotency-key':idempotencyKey},body:JSON.stringify(input)}),
  config:()=>request<FactoryConfig>('/api/v1/factory/config'),
  saveConfig:(input:FactoryConfig)=>request<FactoryConfig>('/api/v1/factory/config',{method:'PUT',body:JSON.stringify(input)}),
  brain:(runId:string)=>request<ProjectBrain>(`/api/v1/factory/runs/${encodeURIComponent(runId)}/brain`),

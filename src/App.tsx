@@ -99,7 +99,7 @@ function Home({go,rtl,snapshot,selectRun}:{go:(s:Screen)=>void;rtl:boolean;snaps
 
 function CreateProduct({notify,rtl,onStarted}:{notify:(s:string)=>void;rtl:boolean;onStarted:(id:string)=>void}){
  const [idea,setIdea]=useState(''); const [priority,setPriority]=useState('Normal'); const [market,setMarket]=useState(''); const [language,setLanguage]=useState('Arabic + English'); const [reference1,setReference1]=useState(''); const [reference2,setReference2]=useState(''); const [launching,setLaunching]=useState(false); const ready=idea.trim().length>15;
- const launch=async()=>{ if(!factoryConfigured){notify('Factory API is not configured');return} setLaunching(true); try{const created=await factoryApi.startRun({intent:idea,priority,market,language,references:[reference1,reference2].map(x=>x.trim()).filter(Boolean),source:'product-owner-dashboard'});notify('Factory run accepted');onStarted(created.runId);}catch(e){notify(e instanceof Error?e.message:'Factory launch failed')}finally{setLaunching(false)} };
+ const [requestKey,setRequestKey]=useState(()=>crypto.randomUUID()); const launch=async()=>{ if(!factoryConfigured){notify('Factory API is not configured');return} setLaunching(true); try{const created=await factoryApi.startRun({intent:idea,priority,market,language,references:[reference1,reference2].map(x=>x.trim()).filter(Boolean),source:'product-owner-dashboard'},requestKey);setRequestKey(crypto.randomUUID());notify('Factory run accepted');onStarted(created.runId);}catch(e){notify(e instanceof Error?e.message:'Factory launch failed')}finally{setLaunching(false)} };
  return <div className="stitch-create">
   <section className="stitch-create-main">
    <div className="stitch-intro panel">
